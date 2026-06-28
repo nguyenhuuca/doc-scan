@@ -1,6 +1,8 @@
 package com.docscanner.data.repository
 
 import android.graphics.Bitmap
+import androidx.room.withTransaction
+import com.docscanner.data.local.db.AppDatabase
 import com.docscanner.data.local.db.DocumentDao
 import com.docscanner.data.local.db.PageDao
 import com.docscanner.data.local.entity.DocumentEntity
@@ -20,7 +22,8 @@ class DocumentRepositoryImpl(
     private val pageDao: PageDao,
     private val imageStorage: ImageStorage,
     private val thumbnailGenerator: ThumbnailGenerator,
-    private val pdfGenerator: PdfGenerator
+    private val pdfGenerator: PdfGenerator,
+    private val database: AppDatabase
 ) : DocumentRepository {
 
     override fun getAllDocuments(): Flow<List<Document>> =
@@ -36,7 +39,6 @@ class DocumentRepositoryImpl(
         val imagePath = imageStorage.savePageImage(documentId, 1, firstPageBitmap, now)
         val thumbnailPath = thumbnailGenerator.generateThumbnail(documentId, firstPageBitmap)
 
-        // Insert document FIRST — page has a FK to documents.id
         val docEntity = DocumentEntity(
             id = documentId,
             name = name,
@@ -45,8 +47,6 @@ class DocumentRepositoryImpl(
             pageCount = 1,
             thumbnailPath = thumbnailPath
         )
-        documentDao.insertDocument(docEntity)
-
         val pageEntity = PageEntity(
             id = UUID.randomUUID().toString(),
             documentId = documentId,
@@ -54,7 +54,11 @@ class DocumentRepositoryImpl(
             imagePath = imagePath,
             createdAt = now
         )
-        pageDao.insertPage(pageEntity)
+        // Insert document FIRST — page has a FK to documents.id
+        database.withTransaction {
+            documentDao.insertDocument(docEntity)
+            pageDao.insertPage(pageEntity)
+        }
 
         return docEntity.toDomain()
     }
@@ -73,12 +77,12 @@ class DocumentRepositoryImpl(
             imagePath = imagePath,
             createdAt = now
         )
-        pageDao.insertPage(pageEntity)
-
         val newPageCount = currentPages.size + 1
-        val doc = documentDao.getDocumentById(documentId)
-        documentDao.updateDocumentMeta(documentId, newPageCount, now, doc?.thumbnailPath)
-
+        database.withTransaction {
+            pageDao.insertPage(pageEntity)
+            val doc = documentDao.getDocumentById(documentId)
+            documentDao.updateDocumentMeta(documentId, newPageCount, now, doc?.thumbnailPath)
+        }
         return pageEntity.toDomain()
     }
 
@@ -92,32 +96,31 @@ class DocumentRepositoryImpl(
             imagePath = newImagePath,
             createdAt = page.createdAt
         )
-        pageDao.updatePage(updatedEntity)
-
-        if (page.pageNumber == 1) {
-            val thumbnailPath = thumbnailGenerator.generateThumbnail(documentId, newBitmap)
+        val thumbnailPath = if (page.pageNumber == 1) {
+            thumbnailGenerator.generateThumbnail(documentId, newBitmap)
+        } else null
+        database.withTransaction {
+            pageDao.updatePage(updatedEntity)
             val pageCount = pageDao.getPageCount(documentId)
-            documentDao.updateDocumentMeta(documentId, pageCount, now, thumbnailPath)
-        } else {
-            val pageCount = pageDao.getPageCount(documentId)
-            val doc = documentDao.getDocumentById(documentId)
-            documentDao.updateDocumentMeta(documentId, pageCount, now, doc?.thumbnailPath)
+            val existingThumb = documentDao.getDocumentById(documentId)?.thumbnailPath
+            documentDao.updateDocumentMeta(documentId, pageCount, now, thumbnailPath ?: existingThumb)
         }
-
         return updatedEntity.toDomain()
     }
 
     override suspend fun reorderPages(documentId: String, reorderedPages: List<Page>) {
         val now = System.currentTimeMillis()
-        reorderedPages.forEachIndexed { index, page ->
-            pageDao.updatePageNumber(page.id, index + 1)
-        }
         val newFirstPage = reorderedPages.firstOrNull()
         val thumbnailPath = if (newFirstPage != null) {
             thumbnailGenerator.generateThumbnailFromPath(documentId, newFirstPage.imagePath)
         } else null
-        val doc = documentDao.getDocumentById(documentId)
-        documentDao.updateDocumentMeta(documentId, reorderedPages.size, now, thumbnailPath ?: doc?.thumbnailPath)
+        database.withTransaction {
+            reorderedPages.forEachIndexed { index, page ->
+                pageDao.updatePageNumber(page.id, index + 1)
+            }
+            val existingThumb = documentDao.getDocumentById(documentId)?.thumbnailPath
+            documentDao.updateDocumentMeta(documentId, reorderedPages.size, now, thumbnailPath ?: existingThumb)
+        }
     }
 
     override suspend fun deleteDocument(documentId: String) {
@@ -129,24 +132,22 @@ class DocumentRepositoryImpl(
         val pages = pageDao.getPagesByDocumentIdSync(documentId)
         val pageToDelete = pages.find { it.id == pageId } ?: return
         imageStorage.deletePageImage(pageToDelete.imagePath)
-        pageDao.deletePage(pageId)
 
-        val remainingPages = pages.filter { it.id != pageId }
-            .sortedBy { it.pageNumber }
-        remainingPages.forEachIndexed { index, page ->
-            if (page.pageNumber != index + 1) {
-                pageDao.updatePageNumber(page.id, index + 1)
-            }
-        }
-
+        val remainingPages = pages.filter { it.id != pageId }.sortedBy { it.pageNumber }
         val now = System.currentTimeMillis()
-        val newFirstPage = remainingPages.firstOrNull()
-        val thumbnailPath = if (newFirstPage != null && pageToDelete.pageNumber == 1) {
-            thumbnailGenerator.generateThumbnailFromPath(documentId, newFirstPage.imagePath)
-        } else {
-            documentDao.getDocumentById(documentId)?.thumbnailPath
+        val thumbnailPath = if (remainingPages.isNotEmpty() && pageToDelete.pageNumber == 1) {
+            thumbnailGenerator.generateThumbnailFromPath(documentId, remainingPages.first().imagePath)
+        } else null
+        database.withTransaction {
+            pageDao.deletePage(pageId)
+            remainingPages.forEachIndexed { index, page ->
+                if (page.pageNumber != index + 1) {
+                    pageDao.updatePageNumber(page.id, index + 1)
+                }
+            }
+            val existingThumb = documentDao.getDocumentById(documentId)?.thumbnailPath
+            documentDao.updateDocumentMeta(documentId, remainingPages.size, now, thumbnailPath ?: existingThumb)
         }
-        documentDao.updateDocumentMeta(documentId, remainingPages.size, now, thumbnailPath)
     }
 
     override suspend fun renameDocument(documentId: String, newName: String) {

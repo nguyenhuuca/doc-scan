@@ -1,23 +1,29 @@
 package com.docscanner.ui.viewer
 
+import android.content.Context
+import android.graphics.BitmapFactory
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.docscanner.common.calcInSampleSize
+import com.docscanner.common.exceptions.PageLimitException
+import com.docscanner.common.exceptions.StorageFullException
 import com.docscanner.data.repository.DocumentRepository
 import com.docscanner.domain.model.Document
 import com.docscanner.domain.model.Page
 import com.docscanner.domain.usecase.DeleteDocumentUseCase
 import com.docscanner.domain.usecase.ExportPdfUseCase
+import com.docscanner.domain.usecase.SaveDocumentUseCase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import android.content.Context
-import android.graphics.BitmapFactory
-import android.net.Uri
 import java.io.File
 import java.util.UUID
 
@@ -36,17 +42,23 @@ class DocumentViewerViewModel(
     private val repository: DocumentRepository,
     private val deleteDocumentUseCase: DeleteDocumentUseCase,
     private val exportPdfUseCase: ExportPdfUseCase,
+    private val saveDocumentUseCase: SaveDocumentUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     companion object {
         private const val MAX_PAGES = 50
+        // Max dimensions matching ImageStorage.downscaleIfNeeded — avoids OOM on gallery imports
+        private const val MAX_IMPORT_WIDTH = 2480
+        private const val MAX_IMPORT_HEIGHT = 3508
     }
 
     val documentId: String = savedStateHandle["documentId"] ?: ""
 
     private val _uiState = MutableStateFlow(DocumentViewerUiState())
     val uiState: StateFlow<DocumentViewerUiState> = _uiState.asStateFlow()
+
+    private val pageMutex = Mutex()
 
     init {
         loadDocument()
@@ -77,16 +89,17 @@ class DocumentViewerViewModel(
 
     fun deletePage(pageId: String) {
         viewModelScope.launch {
-            val pages = _uiState.value.pages
-            if (pages.size <= 1) {
-                // EC-8: deleting last page → delete whole document
-                runCatching { deleteDocumentUseCase(documentId) }
-                    .onSuccess { _uiState.update { it.copy(documentDeleted = true) } }
-                    .onFailure { _uiState.update { it.copy(errorMessage = "Failed to delete document.") } }
-            } else {
-                runCatching { repository.deletePage(documentId, pageId) }
-                    .onSuccess { loadDocument() }
-                    .onFailure { _uiState.update { it.copy(errorMessage = "Failed to delete page.") } }
+            pageMutex.withLock {
+                val pages = _uiState.value.pages
+                if (pages.size <= 1) {
+                    runCatching { deleteDocumentUseCase(documentId) }
+                        .onSuccess { _uiState.update { it.copy(documentDeleted = true) } }
+                        .onFailure { _uiState.update { it.copy(errorMessage = "Failed to delete document.") } }
+                } else {
+                    runCatching { repository.deletePage(documentId, pageId) }
+                        .onSuccess { loadDocument() }
+                        .onFailure { _uiState.update { it.copy(errorMessage = "Failed to delete page.") } }
+                }
             }
         }
     }
@@ -113,8 +126,7 @@ class DocumentViewerViewModel(
     }
 
     fun exportPageAsImage(page: Page): File? {
-        // Returns the existing page image file for sharing (FR-11)
-        val file = java.io.File(page.imagePath)
+        val file = File(page.imagePath)
         return if (file.exists()) file else null
     }
 
@@ -125,11 +137,6 @@ class DocumentViewerViewModel(
 
     fun importFromGallery(uri: Uri, context: Context) {
         viewModelScope.launch {
-            val pageCount = _uiState.value.pages.size
-            if (pageCount >= 50) {
-                _uiState.update { it.copy(errorMessage = "Page limit (50) reached. Cannot add more pages.") }
-                return@launch
-            }
             _uiState.update { it.copy(isLoading = true) }
             runCatching {
                 val mimeType = context.contentResolver.getType(uri)
@@ -137,25 +144,36 @@ class DocumentViewerViewModel(
                     error("Only JPEG and PNG images are supported.")
                 }
                 val bitmap = withContext(Dispatchers.IO) {
-                    context.contentResolver.openInputStream(uri)?.use { stream ->
-                        BitmapFactory.decodeStream(stream)
-                    } ?: error("Failed to decode image.")
+                    val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                        ?: error("Failed to read image.")
+                    val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
+                    opts.inSampleSize = calcInSampleSize(opts.outWidth, opts.outHeight, MAX_IMPORT_WIDTH, MAX_IMPORT_HEIGHT)
+                    opts.inJustDecodeBounds = false
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
+                        ?: error("Failed to decode image.")
                 }
-                repository.addPage(documentId, bitmap)
+                saveDocumentUseCase.addPage(documentId, bitmap)
             }.onSuccess {
                 loadDocument()
             }.onFailure { e ->
-                _uiState.update { it.copy(isLoading = false, errorMessage = e.message ?: "Failed to import image.") }
+                val msg = when (e) {
+                    is PageLimitException -> "Page limit ($MAX_PAGES) reached."
+                    is StorageFullException -> "Not enough storage to import image."
+                    else -> "Failed to import image. Please try again."
+                }
+                _uiState.update { it.copy(isLoading = false, errorMessage = msg) }
             }
         }
     }
 
-    fun copyPageToExportCache(page: Page, context: Context): File? {
-        return runCatching {
-            val exportDir = File(context.cacheDir, "export").also { it.mkdirs() }
-            val dest = File(exportDir, "page_${UUID.randomUUID()}.jpg")
-            File(page.imagePath).copyTo(dest, overwrite = true)
-            dest
-        }.getOrNull()
-    }
+    suspend fun copyPageToExportCache(page: Page, context: Context): File? =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val exportDir = File(context.cacheDir, "export").also { it.mkdirs() }
+                val dest = File(exportDir, "page_${UUID.randomUUID()}.jpg")
+                File(page.imagePath).copyTo(dest, overwrite = true)
+                dest
+            }.getOrNull()
+        }
 }

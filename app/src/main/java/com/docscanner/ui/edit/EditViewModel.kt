@@ -13,7 +13,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 
 data class EditUiState(
     val currentBitmap: Bitmap? = null,
@@ -31,13 +34,17 @@ class EditViewModel(
 
     companion object {
         private const val MAX_UNDO_STACK = 5
+        private const val UNDO_JPEG_QUALITY = 75
     }
 
     val documentId: String = savedStateHandle["documentId"] ?: ""
     val pageIndex: Int = savedStateHandle["pageIndex"] ?: 0
 
     private var currentPage: Page? = null
-    private val undoStack = ArrayDeque<Bitmap>()
+    // Bitmaps are stored as JPEG-compressed ByteArrays to limit memory.
+    // 5 × ~200 KB compressed vs 5 × ~34 MB decoded — prevents OOM on high-res pages.
+    private val undoStack = ArrayDeque<ByteArray>()
+    private val transformMutex = Mutex()
 
     private val _uiState = MutableStateFlow(EditUiState())
     val uiState: StateFlow<EditUiState> = _uiState.asStateFlow()
@@ -70,29 +77,19 @@ class EditViewModel(
         _uiState.update { it.copy(currentBitmap = initialBitmap, hasUnsavedChanges = false, canUndo = false) }
     }
 
-    fun rotate() {
-        val bitmap = _uiState.value.currentBitmap ?: return
-        applyTransform { ImageProcessor.rotateBitmap(bitmap) }
-    }
+    fun rotate() = applyTransform { bitmap -> ImageProcessor.rotateBitmap(bitmap) }
 
-    fun adjustBrightness(value: Float) {
-        val bitmap = _uiState.value.currentBitmap ?: return
-        applyTransform { ImageProcessor.adjustBrightness(bitmap, value) }
-    }
+    fun adjustBrightness(value: Float) = applyTransform { bitmap -> ImageProcessor.adjustBrightness(bitmap, value) }
 
-    fun adjustContrast(value: Float) {
-        val bitmap = _uiState.value.currentBitmap ?: return
-        applyTransform { ImageProcessor.adjustContrast(bitmap, value) }
-    }
+    fun adjustContrast(value: Float) = applyTransform { bitmap -> ImageProcessor.adjustContrast(bitmap, value) }
 
-    fun toGrayscale() {
-        val bitmap = _uiState.value.currentBitmap ?: return
-        applyTransform { ImageProcessor.toGrayscale(bitmap) }
-    }
+    fun toGrayscale() = applyTransform { bitmap -> ImageProcessor.toGrayscale(bitmap) }
 
     fun undo() {
         if (undoStack.isEmpty()) return
-        val previous = undoStack.removeLast()
+        val bytes = undoStack.removeLast()
+        val previous = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        val old = _uiState.value.currentBitmap
         _uiState.update {
             it.copy(
                 currentBitmap = previous,
@@ -100,6 +97,7 @@ class EditViewModel(
                 hasUnsavedChanges = undoStack.isNotEmpty()
             )
         }
+        old?.recycle()
     }
 
     fun save() {
@@ -126,31 +124,40 @@ class EditViewModel(
     fun clearError() { _uiState.update { it.copy(errorMessage = null) } }
     fun clearSaved() { _uiState.update { it.copy(isSaved = false) } }
 
-    private fun applyTransform(transform: suspend () -> Bitmap) {
-        val current = _uiState.value.currentBitmap ?: return
+    private fun applyTransform(transform: suspend (Bitmap) -> Bitmap) {
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessing = true) }
-            runCatching { transform() }
-                .onSuccess { newBitmap ->
-                    pushToUndoStack(current)
-                    _uiState.update { it.copy(currentBitmap = newBitmap, isProcessing = false, hasUnsavedChanges = true, canUndo = true) }
+            transformMutex.withLock {
+                val current = _uiState.value.currentBitmap ?: run {
+                    _uiState.update { it.copy(isProcessing = false) }
+                    return@withLock
                 }
-                .onFailure {
-                    _uiState.update { it.copy(isProcessing = false, errorMessage = "Processing failed.") }
-                }
+                runCatching { withContext(Dispatchers.Default) { transform(current) } }
+                    .onSuccess { newBitmap ->
+                        pushToUndoStack(current)
+                        _uiState.update {
+                            it.copy(currentBitmap = newBitmap, isProcessing = false, hasUnsavedChanges = true, canUndo = true)
+                        }
+                    }
+                    .onFailure {
+                        _uiState.update { it.copy(isProcessing = false, errorMessage = "Processing failed.") }
+                    }
+            }
         }
     }
 
     private fun pushToUndoStack(bitmap: Bitmap) {
-        undoStack.addLast(bitmap)
+        val stream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, UNDO_JPEG_QUALITY, stream)
+        undoStack.addLast(stream.toByteArray())
         if (undoStack.size > MAX_UNDO_STACK) {
-            undoStack.removeFirst().recycle()
+            undoStack.removeFirst()
         }
     }
 
     override fun onCleared() {
         super.onCleared()
-        undoStack.forEach { it.recycle() }
+        _uiState.value.currentBitmap?.recycle()
         undoStack.clear()
     }
 }

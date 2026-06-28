@@ -26,7 +26,7 @@ class PdfGenerator(private val cacheDir: File) {
         pageImagePaths: List<String>
     ): File = withContext(Dispatchers.IO) {
         val exportDir = File(cacheDir, "export").also { it.mkdirs() }
-        val outputFile = File(exportDir, "${documentId}_${System.currentTimeMillis()}.pdf")
+        val outputFile = File(exportDir, "export_${System.currentTimeMillis()}.pdf")
 
         val pdfDocument = PdfDocument()
         try {

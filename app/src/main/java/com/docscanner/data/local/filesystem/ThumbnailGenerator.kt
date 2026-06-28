@@ -2,6 +2,7 @@ package com.docscanner.data.local.filesystem
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import com.docscanner.common.calcInSampleSize
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -30,7 +31,12 @@ class ThumbnailGenerator(private val filesDir: File) {
         documentId: String,
         sourceImagePath: String
     ): String? = withContext(Dispatchers.IO) {
-        val bitmap = BitmapFactory.decodeFile(sourceImagePath) ?: return@withContext null
+        val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(sourceImagePath, opts)
+        if (opts.outWidth <= 0) return@withContext null
+        opts.inSampleSize = calcInSampleSize(opts.outWidth, opts.outHeight, 256, 256)
+        opts.inJustDecodeBounds = false
+        val bitmap = BitmapFactory.decodeFile(sourceImagePath, opts) ?: return@withContext null
         val path = generateThumbnail(documentId, bitmap)
         bitmap.recycle()
         path

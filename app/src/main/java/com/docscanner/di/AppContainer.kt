@@ -15,18 +15,16 @@ import com.docscanner.domain.usecase.RenameDocumentUseCase
 import com.docscanner.domain.usecase.SaveDocumentUseCase
 import java.io.File
 
-class AppContainer(private val context: Context) {
+class AppContainer(context: Context) {
+
+    private val appContext: Context = context.applicationContext
 
     val database: AppDatabase by lazy {
-        Room.databaseBuilder(
-            context.applicationContext,
-            AppDatabase::class.java,
-            "docscanner.db"
-        ).build()
+        Room.databaseBuilder(appContext, AppDatabase::class.java, "docscanner.db").build()
     }
 
-    val filesDir: File get() = context.filesDir
-    val cacheDir: File get() = context.cacheDir
+    val filesDir: File get() = appContext.filesDir
+    val cacheDir: File get() = appContext.cacheDir
 
     val imageStorage: ImageStorage by lazy { ImageStorage(filesDir) }
 
@@ -40,7 +38,8 @@ class AppContainer(private val context: Context) {
             database.pageDao(),
             imageStorage,
             thumbnailGenerator,
-            pdfGenerator
+            pdfGenerator,
+            database
         )
     }
 
@@ -49,20 +48,4 @@ class AppContainer(private val context: Context) {
     val exportPdfUseCase: ExportPdfUseCase by lazy { ExportPdfUseCase(documentRepository) }
     val deleteDocumentUseCase: DeleteDocumentUseCase by lazy { DeleteDocumentUseCase(documentRepository) }
     val renameDocumentUseCase: RenameDocumentUseCase by lazy { RenameDocumentUseCase(documentRepository) }
-
-    init {
-        cleanExportCache()
-    }
-
-    private fun cleanExportCache() {
-        val exportDir = File(cacheDir, "export")
-        if (exportDir.exists()) {
-            val tenMinutesAgo = System.currentTimeMillis() - 10 * 60 * 1000L
-            exportDir.listFiles()?.forEach { file ->
-                if (file.lastModified() < tenMinutesAgo) {
-                    file.delete()
-                }
-            }
-        }
-    }
 }

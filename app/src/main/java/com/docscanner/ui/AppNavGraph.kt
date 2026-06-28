@@ -130,6 +130,7 @@ fun AppNavGraph(
                             app.container.documentRepository,
                             app.container.deleteDocumentUseCase,
                             app.container.exportPdfUseCase,
+                            app.container.saveDocumentUseCase,
                             createSavedStateHandle()
                         )
                     }

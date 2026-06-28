@@ -2,6 +2,7 @@ package com.docscanner.data.local.filesystem
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import com.docscanner.common.calcInSampleSize
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -9,8 +10,16 @@ import java.io.FileOutputStream
 
 class ImageStorage(private val filesDir: File) {
 
-    private fun documentPagesDir(documentId: String): File =
-        File(filesDir, "documents/$documentId/pages").also { it.mkdirs() }
+    private fun requireValidId(documentId: String) {
+        require(documentId.matches(Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"))) {
+            "Invalid document ID format"
+        }
+    }
+
+    private fun documentPagesDir(documentId: String): File {
+        requireValidId(documentId)
+        return File(filesDir, "documents/$documentId/pages").also { it.mkdirs() }
+    }
 
     private fun pageFilename(pageNumber: Int, updatedAt: Long): String =
         "page_%03d_%d.jpg".format(pageNumber, updatedAt)
@@ -50,11 +59,19 @@ class ImageStorage(private val filesDir: File) {
     }
 
     suspend fun deleteDocumentImages(documentId: String) = withContext(Dispatchers.IO) {
+        requireValidId(documentId)
         File(filesDir, "documents/$documentId").deleteRecursively()
     }
 
-    fun loadPageBitmap(imagePath: String): Bitmap? =
-        BitmapFactory.decodeFile(imagePath)
+    fun loadPageBitmap(imagePath: String): Bitmap? {
+        val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(imagePath, opts)
+        if (opts.outWidth <= 0) return null
+        // Cap at storage max to bound memory on large source files
+        opts.inSampleSize = calcInSampleSize(opts.outWidth, opts.outHeight, 2480, 3508)
+        opts.inJustDecodeBounds = false
+        return BitmapFactory.decodeFile(imagePath, opts)
+    }
 
     fun pageFileExists(imagePath: String): Boolean = File(imagePath).exists()
 
