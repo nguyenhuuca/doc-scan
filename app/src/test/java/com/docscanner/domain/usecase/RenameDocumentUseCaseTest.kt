@@ -65,6 +65,13 @@ class RenameDocumentUseCaseTest {
     }
 
     @Test
+    fun `rename with exactly 50 chars succeeds`() = runBlocking {
+        val repo = FakeRepo()
+        RenameDocumentUseCase(repo)("id", "a".repeat(50))
+        assertEquals("a".repeat(50), repo.lastRenamedTo)
+    }
+
+    @Test
     fun `rename with forbidden char throws DocumentNameException`() = runBlocking {
         val forbidden = listOf("/", "\\", ":", "*", "?", "\"", "<", ">", "|")
         val repo = FakeRepo()

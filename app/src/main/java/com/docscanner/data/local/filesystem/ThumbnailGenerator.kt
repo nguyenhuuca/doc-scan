@@ -50,6 +50,7 @@ class ThumbnailGenerator(private val filesDir: File) {
 
     private fun scaleThumbnail(bitmap: Bitmap): Bitmap {
         val maxSize = 256
+        if (bitmap.width == 0 || bitmap.height == 0) return bitmap
         if (bitmap.width <= maxSize && bitmap.height <= maxSize) return bitmap
         val scale = maxSize.toFloat() / maxOf(bitmap.width, bitmap.height)
         val newWidth = (bitmap.width * scale).toInt()

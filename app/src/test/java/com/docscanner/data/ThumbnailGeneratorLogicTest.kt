@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+// Tests the scale-to-thumbnail logic mirroring ThumbnailGenerator.scaleThumbnail().
 class ThumbnailGeneratorLogicTest {
 
     private val MAX_SIZE = 256
@@ -45,7 +46,23 @@ class ThumbnailGeneratorLogicTest {
         assertEquals(100, h)
     }
 
+    @Test
+    fun `zero-width input returns 0 x 0 without divide-by-zero`() {
+        val (w, h) = scale(0, 0)
+        assertEquals(0, w)
+        assertEquals(0, h)
+    }
+
+    @Test
+    fun `zero-height only input returns unchanged without crash`() {
+        val (w, h) = scale(512, 0)
+        assertEquals(512, w)
+        assertEquals(0, h)
+    }
+
+    // Mirror of ThumbnailGenerator.scaleThumbnail logic
     private fun scale(inputWidth: Int, inputHeight: Int): Pair<Int, Int> {
+        if (inputWidth == 0 || inputHeight == 0) return inputWidth to inputHeight
         if (inputWidth <= MAX_SIZE && inputHeight <= MAX_SIZE) return inputWidth to inputHeight
         val scaleFactor = MAX_SIZE.toFloat() / maxOf(inputWidth, inputHeight)
         return (inputWidth * scaleFactor).toInt() to (inputHeight * scaleFactor).toInt()

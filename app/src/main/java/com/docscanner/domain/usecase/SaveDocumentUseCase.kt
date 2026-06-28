@@ -15,12 +15,17 @@ import java.util.Locale
 
 class SaveDocumentUseCase(
     private val repository: DocumentRepository,
-    private val storageDir: File
+    private val storageDir: File,
+    // Injectable for testing — production default uses StatFs
+    private val availableBytes: (File) -> Long = { dir ->
+        val stat = StatFs(dir.absolutePath)
+        stat.availableBlocksLong * stat.blockSizeLong
+    }
 ) {
     companion object {
-        private const val MIN_STORAGE_BYTES = 50L * 1024 * 1024
-        private const val MAX_DOCUMENTS = 100
-        private const val MAX_PAGES = 50
+        internal const val MIN_STORAGE_BYTES = 50L * 1024 * 1024
+        internal const val MAX_DOCUMENTS = 100
+        internal const val MAX_PAGES = 50
         private val DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
     }
 
@@ -39,8 +44,7 @@ class SaveDocumentUseCase(
     }
 
     private fun checkStorage() {
-        val stat = StatFs(storageDir.absolutePath)
-        val availableBytes = stat.availableBlocksLong * stat.blockSizeLong
-        if (availableBytes < MIN_STORAGE_BYTES) throw StorageFullException(availableBytes)
+        val bytes = availableBytes(storageDir)
+        if (bytes < MIN_STORAGE_BYTES) throw StorageFullException(bytes)
     }
 }

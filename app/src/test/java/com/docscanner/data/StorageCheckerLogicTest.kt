@@ -1,51 +1,56 @@
 package com.docscanner.data
 
+import com.docscanner.ui.common.StorageChecker
+import com.docscanner.ui.common.StorageState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
+// Tests StorageChecker.classify() — the pure classification function that
+// contains all business logic. No Android APIs (no StatFs) needed.
 class StorageCheckerLogicTest {
 
-    private val WARNING_THRESHOLD = 100L * 1024 * 1024   // 100 MB
-    private val BLOCKING_THRESHOLD = 50L * 1024 * 1024   // 50 MB
-
     @Test
-    fun `exactly 100 MB available returns Sufficient`() {
-        val available = 100L * 1024 * 1024
-        val state = classify(available)
-        assertEquals("sufficient", state)
+    fun `exactly at WARNING_THRESHOLD returns Sufficient`() {
+        val state = StorageChecker.classify(StorageChecker.WARNING_THRESHOLD)
+        assertEquals(StorageState.Sufficient, state)
     }
 
     @Test
-    fun `99 MB returns Warning`() {
-        val available = 99L * 1024 * 1024
-        val state = classify(available)
-        assertEquals("warning", state)
+    fun `one byte below WARNING_THRESHOLD returns Warning`() {
+        val state = StorageChecker.classify(StorageChecker.WARNING_THRESHOLD - 1)
+        assertTrue(state is StorageState.Warning)
     }
 
     @Test
-    fun `exactly 50 MB returns Warning`() {
-        val available = 50L * 1024 * 1024
-        val state = classify(available)
-        assertEquals("warning", state)
+    fun `exactly at BLOCKING_THRESHOLD returns Warning`() {
+        val state = StorageChecker.classify(StorageChecker.BLOCKING_THRESHOLD)
+        assertTrue(state is StorageState.Warning)
     }
 
     @Test
-    fun `49 MB returns Blocked`() {
-        val available = 49L * 1024 * 1024
-        val state = classify(available)
-        assertEquals("blocked", state)
+    fun `one byte below BLOCKING_THRESHOLD returns Blocked`() {
+        val state = StorageChecker.classify(StorageChecker.BLOCKING_THRESHOLD - 1)
+        assertTrue(state is StorageState.Blocked)
     }
 
     @Test
     fun `zero bytes returns Blocked`() {
-        val available = 0L
-        val state = classify(available)
-        assertEquals("blocked", state)
+        val state = StorageChecker.classify(0L)
+        assertTrue(state is StorageState.Blocked)
     }
 
-    private fun classify(availableBytes: Long): String = when {
-        availableBytes < BLOCKING_THRESHOLD -> "blocked"
-        availableBytes < WARNING_THRESHOLD -> "warning"
-        else -> "sufficient"
+    @Test
+    fun `Warning carries available byte count`() {
+        val available = StorageChecker.BLOCKING_THRESHOLD
+        val state = StorageChecker.classify(available) as StorageState.Warning
+        assertEquals(available, state.availableBytes)
+    }
+
+    @Test
+    fun `Blocked carries available byte count`() {
+        val available = 1L
+        val state = StorageChecker.classify(available) as StorageState.Blocked
+        assertEquals(available, state.availableBytes)
     }
 }

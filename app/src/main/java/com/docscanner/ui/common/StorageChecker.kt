@@ -10,16 +10,18 @@ sealed class StorageState {
 }
 
 object StorageChecker {
-    private const val WARNING_THRESHOLD = 100L * 1024 * 1024   // 100 MB
-    private const val BLOCKING_THRESHOLD = 50L * 1024 * 1024   // 50 MB
+    internal const val WARNING_THRESHOLD = 100L * 1024 * 1024   // 100 MB
+    internal const val BLOCKING_THRESHOLD = 50L * 1024 * 1024   // 50 MB
+
+    // Pure function — testable without Android (no StatFs)
+    internal fun classify(availableBytes: Long): StorageState = when {
+        availableBytes < BLOCKING_THRESHOLD -> StorageState.Blocked(availableBytes)
+        availableBytes < WARNING_THRESHOLD -> StorageState.Warning(availableBytes)
+        else -> StorageState.Sufficient
+    }
 
     fun check(directory: File): StorageState {
         val stat = StatFs(directory.absolutePath)
-        val available = stat.availableBlocksLong * stat.blockSizeLong
-        return when {
-            available < BLOCKING_THRESHOLD -> StorageState.Blocked(available)
-            available < WARNING_THRESHOLD -> StorageState.Warning(available)
-            else -> StorageState.Sufficient
-        }
+        return classify(stat.availableBlocksLong * stat.blockSizeLong)
     }
 }
