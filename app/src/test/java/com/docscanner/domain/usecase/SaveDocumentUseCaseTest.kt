@@ -1,119 +1,87 @@
 package com.docscanner.domain.usecase
 
-import android.graphics.Bitmap
 import com.docscanner.common.exceptions.DocumentLimitException
 import com.docscanner.common.exceptions.PageLimitException
-import com.docscanner.domain.model.Document
-import com.docscanner.domain.model.Page
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.runBlocking
-import org.junit.Assert.assertEquals
+import com.docscanner.common.exceptions.StorageFullException
+import com.docscanner.data.repository.DocumentRepository
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
+import org.mockito.Mockito.mock
 import java.io.File
 
+// Tests business logic (limits, storage, name generation) via extracted internal methods.
+// Full integration tests (routing, success paths) live in androidTest/ScannerFlowTest.
 class SaveDocumentUseCaseTest {
 
     private val plentifulStorage: (File) -> Long = { Long.MAX_VALUE }
     private val emptyStorage: (File) -> Long = { 0L }
 
-    private fun makeUseCase(
-        docCount: Int = 0,
-        pageCount: Int = 0,
-        storage: (File) -> Long = plentifulStorage
-    ) = SaveDocumentUseCase(FakeRepo(docCount, pageCount), File("/fake"), storage)
+    private fun makeUseCase(storage: (File) -> Long = plentifulStorage) =
+        SaveDocumentUseCase(mock(DocumentRepository::class.java), File("/fake"), storage)
 
-    // ── Limit enforcement ─────────────────────────────────────────────────────
+    // ── Document count limit ──────────────────────────────────────────────────
 
     @Test
-    fun `createDocument throws DocumentLimitException at 100 documents`() = runBlocking {
+    fun `createDocument throws DocumentLimitException at 100 documents`() {
         try {
-            makeUseCase(docCount = 100).createDocument(fakeBitmap())
+            makeUseCase().validateDocumentCount(SaveDocumentUseCase.MAX_DOCUMENTS)
             fail("Expected DocumentLimitException")
         } catch (e: DocumentLimitException) { /* pass */ }
     }
 
     @Test
-    fun `createDocument succeeds at 99 documents`() = runBlocking {
-        val doc = makeUseCase(docCount = 99).createDocument(fakeBitmap())
-        assertNotNull(doc)
+    fun `createDocument does not throw at 99 documents`() {
+        makeUseCase().validateDocumentCount(SaveDocumentUseCase.MAX_DOCUMENTS - 1)
+        // No exception → pass
     }
 
+    // ── Page count limit ──────────────────────────────────────────────────────
+
     @Test
-    fun `addPage throws PageLimitException at 50 pages`() = runBlocking {
+    fun `addPage throws PageLimitException at 50 pages`() {
         try {
-            makeUseCase(pageCount = 50).addPage("doc", fakeBitmap())
+            makeUseCase().validatePageCount(SaveDocumentUseCase.MAX_PAGES, "doc-id")
             fail("Expected PageLimitException")
         } catch (e: PageLimitException) { /* pass */ }
     }
 
     @Test
-    fun `addPage succeeds at 49 pages`() = runBlocking {
-        val page = makeUseCase(pageCount = 49).addPage("doc", fakeBitmap())
-        assertNotNull(page)
+    fun `addPage does not throw at 49 pages`() {
+        makeUseCase().validatePageCount(SaveDocumentUseCase.MAX_PAGES - 1, "doc-id")
+        // No exception → pass
     }
 
     // ── Storage check ─────────────────────────────────────────────────────────
 
     @Test
-    fun `createDocument throws StorageFullException when storage is empty`() = runBlocking {
+    fun `validateStorage throws StorageFullException when storage is empty`() {
         try {
-            makeUseCase(storage = emptyStorage).createDocument(fakeBitmap())
+            makeUseCase(emptyStorage).validateStorage()
             fail("Expected StorageFullException")
-        } catch (e: com.docscanner.common.exceptions.StorageFullException) { /* pass */ }
-    }
-
-    // ── Name format ───────────────────────────────────────────────────────────
-
-    @Test
-    fun `createDocument uses auto-generated name starting with Document`() = runBlocking {
-        val repo = FakeRepo()
-        SaveDocumentUseCase(repo, File("/fake"), plentifulStorage).createDocument(fakeBitmap())
-        assertNotNull(repo.createdName)
-        assert(repo.createdName!!.startsWith("Document ")) {
-            "Expected name starting with 'Document ', got '${repo.createdName}'"
-        }
+        } catch (e: StorageFullException) { /* pass */ }
     }
 
     @Test
-    fun `addPage routes to correct document id`() = runBlocking {
-        val repo = FakeRepo(pageCount = 0)
-        SaveDocumentUseCase(repo, File("/fake"), plentifulStorage).addPage("my-doc", fakeBitmap())
-        assertEquals("my-doc", repo.addedDocumentId)
+    fun `validateStorage does not throw with plentiful storage`() {
+        makeUseCase(plentifulStorage).validateStorage()
+        // No exception → pass
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── Name generation ───────────────────────────────────────────────────────
 
-    private fun fakeBitmap() = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+    @Test
+    fun `buildDocumentName starts with Document`() {
+        val name = makeUseCase().buildDocumentName()
+        assertNotNull(name)
+        assertTrue("Expected name starting with 'Document ', got '$name'", name.startsWith("Document "))
+    }
 
-    private class FakeRepo(
-        private val docCount: Int = 0,
-        private val pageCount: Int = 0
-    ) : com.docscanner.data.repository.DocumentRepository {
-        var createdName: String? = null
-        var addedDocumentId: String? = null
-
-        override fun getAllDocuments(): Flow<List<Document>> = flowOf(emptyList())
-        override suspend fun getDocumentById(id: String): Document? = null
-        override suspend fun createDocument(name: String, bitmap: Bitmap): Document {
-            createdName = name
-            return Document("test-id", name, 0L, 0L, 1, null)
-        }
-        override suspend fun addPage(documentId: String, bitmap: Bitmap): Page {
-            addedDocumentId = documentId
-            return Page("page-id", documentId, pageCount + 1, "/fake/path", 0L)
-        }
-        override suspend fun updatePage(documentId: String, page: Page, bitmap: Bitmap): Page = page
-        override suspend fun reorderPages(documentId: String, pages: List<Page>) {}
-        override suspend fun deleteDocument(documentId: String) {}
-        override suspend fun deletePage(documentId: String, pageId: String) {}
-        override suspend fun renameDocument(documentId: String, name: String) {}
-        override suspend fun getDocumentCount(): Int = docCount
-        override suspend fun getPageCount(documentId: String): Int = pageCount
-        override suspend fun getPagesForDocument(documentId: String): List<Page> = emptyList()
-        override suspend fun exportPdf(documentId: String): File = File("/fake.pdf")
-        override fun pageFileExists(imagePath: String): Boolean = true
+    @Test
+    fun `buildDocumentName matches Document YYYY-MM-DD HHmm format`() {
+        val name = makeUseCase().buildDocumentName()
+        val pattern = Regex("""^Document \d{4}-\d{2}-\d{2} \d{2}:\d{2}$""")
+        assertTrue("Name '$name' did not match expected pattern", pattern.matches(name))
     }
 }

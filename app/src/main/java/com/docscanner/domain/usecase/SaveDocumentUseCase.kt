@@ -30,21 +30,30 @@ class SaveDocumentUseCase(
     }
 
     suspend fun createDocument(bitmap: Bitmap): Document {
-        checkStorage()
-        if (repository.getDocumentCount() >= MAX_DOCUMENTS) throw DocumentLimitException()
-        val name = "Document ${DATE_FORMAT.format(Date())}"
+        validateStorage()
+        validateDocumentCount(repository.getDocumentCount())
+        val name = buildDocumentName()
         return repository.createDocument(name, bitmap)
     }
 
     suspend fun addPage(documentId: String, bitmap: Bitmap): Page {
-        checkStorage()
-        val pageCount = repository.getPageCount(documentId)
-        if (pageCount >= MAX_PAGES) throw PageLimitException(documentId)
+        validateStorage()
+        validatePageCount(repository.getPageCount(documentId), documentId)
         return repository.addPage(documentId, bitmap)
     }
 
-    private fun checkStorage() {
+    internal fun validateStorage() {
         val bytes = availableBytes(storageDir)
         if (bytes < MIN_STORAGE_BYTES) throw StorageFullException(bytes)
     }
+
+    internal fun validateDocumentCount(count: Int) {
+        if (count >= MAX_DOCUMENTS) throw DocumentLimitException()
+    }
+
+    internal fun validatePageCount(count: Int, documentId: String) {
+        if (count >= MAX_PAGES) throw PageLimitException(documentId)
+    }
+
+    internal fun buildDocumentName(): String = "Document ${DATE_FORMAT.format(Date())}"
 }

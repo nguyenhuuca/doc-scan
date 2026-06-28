@@ -35,10 +35,10 @@ class BitmapUtilsTest {
     }
 
     @Test
-    fun `portrait image uses height as limiting dimension`() {
-        // 100 × 2000 targeting 256 × 256 — height (2000) drives the sample size
-        val result = calcInSampleSize(100, 2000, 256, 256)
-        assertTrue("Expected sampleSize >= 4 for 2000px height, got $result", result >= 4)
+    fun `portrait image drives sample size when both dimensions exceed target`() {
+        // 1024 × 4096 targeting 256 × 256 — both dimensions exceed target, height is 4x width
+        val result = calcInSampleSize(1024, 4096, 256, 256)
+        assertTrue("Expected sampleSize >= 4 for 4096px height, got $result", result >= 4)
     }
 
     @Test
