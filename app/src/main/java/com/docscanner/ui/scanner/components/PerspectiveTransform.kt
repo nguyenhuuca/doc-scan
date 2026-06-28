@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.PointF
+import com.docscanner.common.AppConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -17,7 +18,7 @@ data class Quad(
 
 object PerspectiveTransform {
 
-    suspend fun transform(source: Bitmap, quad: Quad, outputWidth: Int = 2480, outputHeight: Int = 3508): Bitmap =
+    suspend fun transform(source: Bitmap, quad: Quad, outputWidth: Int = AppConfig.IMAGE_MAX_WIDTH, outputHeight: Int = AppConfig.IMAGE_MAX_HEIGHT): Bitmap =
         withContext(Dispatchers.IO) {
             val srcPoints = floatArrayOf(
                 quad.topLeft.x, quad.topLeft.y,

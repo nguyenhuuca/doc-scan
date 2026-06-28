@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.docscanner.common.AppConfig
 import com.docscanner.data.repository.DocumentRepository
 import com.docscanner.domain.model.Page
 import kotlinx.coroutines.Dispatchers
@@ -37,9 +38,9 @@ class EditViewModel(
 ) : ViewModel() {
 
     companion object {
-        private const val MAX_UNDO_STACK = 5
-        private const val UNDO_JPEG_QUALITY = 75
-        private const val SLIDER_DEBOUNCE_MS = 300L
+        private val MAX_UNDO_STACK        = AppConfig.EDIT_MAX_UNDO_STACK
+        private val UNDO_JPEG_QUALITY     = AppConfig.EDIT_UNDO_JPEG_QUALITY
+        private val SLIDER_DEBOUNCE_MS    = AppConfig.EDIT_SLIDER_DEBOUNCE_MS
     }
 
     val documentId: String = savedStateHandle["documentId"] ?: ""

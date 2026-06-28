@@ -2,6 +2,7 @@ package com.docscanner.domain.usecase
 
 import android.graphics.Bitmap
 import android.os.StatFs
+import com.docscanner.common.AppConfig
 import com.docscanner.common.exceptions.DocumentLimitException
 import com.docscanner.common.exceptions.PageLimitException
 import com.docscanner.common.exceptions.StorageFullException
@@ -23,10 +24,10 @@ class SaveDocumentUseCase(
     }
 ) {
     companion object {
-        internal const val MIN_STORAGE_BYTES = 50L * 1024 * 1024
-        internal const val MAX_DOCUMENTS = 100
-        internal const val MAX_PAGES = 50
-        private val DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+        internal val MIN_STORAGE_BYTES = AppConfig.MIN_STORAGE_BYTES
+        internal val MAX_DOCUMENTS     = AppConfig.MAX_DOCUMENTS
+        internal val MAX_PAGES         = AppConfig.MAX_PAGES
+        private val DATE_FORMAT        = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
     }
 
     suspend fun createDocument(bitmap: Bitmap): Document {

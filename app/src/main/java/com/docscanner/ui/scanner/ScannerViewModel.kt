@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.docscanner.common.AppConfig
 import com.docscanner.common.calcInSampleSize
 import com.docscanner.common.exceptions.DocumentLimitException
 import com.docscanner.common.exceptions.PageLimitException
@@ -75,7 +76,7 @@ class ScannerViewModel(
                     rawBytes.mapNotNull { bytes ->
                         val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
-                        opts.inSampleSize = calcInSampleSize(opts.outWidth, opts.outHeight, 2480, 3508)
+                        opts.inSampleSize = calcInSampleSize(opts.outWidth, opts.outHeight, AppConfig.IMAGE_MAX_WIDTH, AppConfig.IMAGE_MAX_HEIGHT)
                         opts.inJustDecodeBounds = false
                         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
                     }

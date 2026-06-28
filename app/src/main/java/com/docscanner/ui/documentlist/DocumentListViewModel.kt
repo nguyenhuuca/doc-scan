@@ -2,6 +2,7 @@ package com.docscanner.ui.documentlist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.docscanner.common.AppConfig
 import com.docscanner.common.exceptions.DocumentNameException
 import com.docscanner.domain.model.Document
 import com.docscanner.domain.usecase.DeleteDocumentUseCase
@@ -32,7 +33,7 @@ class DocumentListViewModel(
 ) : ViewModel() {
 
     companion object {
-        const val MAX_DOCUMENTS = 100
+        val MAX_DOCUMENTS = AppConfig.MAX_DOCUMENTS
     }
 
     private val _errorMessage = MutableStateFlow<String?>(null)

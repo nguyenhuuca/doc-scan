@@ -1,6 +1,7 @@
 package com.docscanner.data.pdf
 
 import android.graphics.BitmapFactory
+import com.docscanner.common.AppConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -16,11 +17,11 @@ import java.io.OutputStream
 class PdfGenerator(private val cacheDir: File) {
 
     companion object {
-        private const val PAGE_WIDTH_PT  = 595
-        private const val PAGE_HEIGHT_PT = 842
-        private const val MARGIN_PT      = 10
-        private const val DRAWABLE_W     = PAGE_WIDTH_PT  - 2 * MARGIN_PT   // 575
-        private const val DRAWABLE_H     = PAGE_HEIGHT_PT - 2 * MARGIN_PT   // 822
+        private val PAGE_WIDTH_PT  = AppConfig.PDF_PAGE_WIDTH_PT
+        private val PAGE_HEIGHT_PT = AppConfig.PDF_PAGE_HEIGHT_PT
+        private val MARGIN_PT      = AppConfig.PDF_MARGIN_PT
+        private val DRAWABLE_W     = PAGE_WIDTH_PT  - 2 * MARGIN_PT
+        private val DRAWABLE_H     = PAGE_HEIGHT_PT - 2 * MARGIN_PT
     }
 
     private data class JpegPage(val path: String, val width: Int, val height: Int)

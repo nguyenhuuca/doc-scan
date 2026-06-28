@@ -2,6 +2,7 @@ package com.docscanner.data.local.filesystem
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import com.docscanner.common.AppConfig
 import com.docscanner.common.calcInSampleSize
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -35,7 +36,7 @@ class ImageStorage(private val filesDir: File) {
         val file = File(dir, filename)
         val scaled = downscaleIfNeeded(bitmap)
         FileOutputStream(file).use { out ->
-            scaled.compress(Bitmap.CompressFormat.JPEG, 85, out)
+            scaled.compress(Bitmap.CompressFormat.JPEG, AppConfig.IMAGE_JPEG_QUALITY, out)
         }
         if (scaled !== bitmap) scaled.recycle()
         file.absolutePath
@@ -68,7 +69,7 @@ class ImageStorage(private val filesDir: File) {
         BitmapFactory.decodeFile(imagePath, opts)
         if (opts.outWidth <= 0) return@withContext null
         // Cap at storage max to bound memory on large source files
-        opts.inSampleSize = calcInSampleSize(opts.outWidth, opts.outHeight, 2480, 3508)
+        opts.inSampleSize = calcInSampleSize(opts.outWidth, opts.outHeight, AppConfig.IMAGE_MAX_WIDTH, AppConfig.IMAGE_MAX_HEIGHT)
         opts.inJustDecodeBounds = false
         BitmapFactory.decodeFile(imagePath, opts)
     }
@@ -77,8 +78,8 @@ class ImageStorage(private val filesDir: File) {
         withContext(Dispatchers.IO) { File(imagePath).exists() }
 
     private fun downscaleIfNeeded(bitmap: Bitmap): Bitmap {
-        val maxWidth = 2480
-        val maxHeight = 3508
+        val maxWidth = AppConfig.IMAGE_MAX_WIDTH
+        val maxHeight = AppConfig.IMAGE_MAX_HEIGHT
         if (bitmap.width <= maxWidth && bitmap.height <= maxHeight) return bitmap
         val widthRatio = maxWidth.toFloat() / bitmap.width
         val heightRatio = maxHeight.toFloat() / bitmap.height

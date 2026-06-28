@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.docscanner.common.AppConfig
 import com.docscanner.common.calcInSampleSize
 import com.docscanner.common.exceptions.PageLimitException
 import com.docscanner.common.exceptions.StorageFullException
@@ -48,10 +49,9 @@ class DocumentViewerViewModel(
 ) : ViewModel() {
 
     companion object {
-        private const val MAX_PAGES = 50
-        // Max dimensions matching ImageStorage.downscaleIfNeeded — avoids OOM on gallery imports
-        private const val MAX_IMPORT_WIDTH = 2480
-        private const val MAX_IMPORT_HEIGHT = 3508
+        private val MAX_PAGES        = AppConfig.MAX_PAGES
+        private val MAX_IMPORT_WIDTH = AppConfig.IMAGE_MAX_WIDTH
+        private val MAX_IMPORT_HEIGHT= AppConfig.IMAGE_MAX_HEIGHT
     }
 
     val documentId: String = savedStateHandle["documentId"] ?: ""
