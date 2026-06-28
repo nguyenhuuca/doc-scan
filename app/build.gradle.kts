@@ -56,6 +56,11 @@ android {
     }
 }
 
+ksp {
+    // Export Room schema JSON to app/schemas/ — commit these files so migration history is tracked in git
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

@@ -20,7 +20,9 @@ class AppContainer(context: Context) {
     private val appContext: Context = context.applicationContext
 
     val database: AppDatabase by lazy {
-        Room.databaseBuilder(appContext, AppDatabase::class.java, "docscanner.db").build()
+        Room.databaseBuilder(appContext, AppDatabase::class.java, "docscanner.db")
+            .addMigrations(*AppDatabase.ALL)
+            .build()
     }
 
     val filesDir: File get() = appContext.filesDir
