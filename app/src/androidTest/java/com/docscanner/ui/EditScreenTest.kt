@@ -42,7 +42,7 @@ class EditScreenTest {
         override suspend fun getPageCount(id: String): Int = 1
         override suspend fun getPagesForDocument(id: String): List<Page> = listOf(testPage)
         override suspend fun exportPdf(id: String): File = File("/f.pdf")
-        override fun pageFileExists(path: String): Boolean = false
+        override suspend fun pageFileExists(path: String): Boolean = false
     }
 
     @Test

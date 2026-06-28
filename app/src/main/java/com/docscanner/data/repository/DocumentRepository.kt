@@ -20,5 +20,5 @@ interface DocumentRepository {
     suspend fun getPageCount(documentId: String): Int
     suspend fun getPagesForDocument(documentId: String): List<Page>
     suspend fun exportPdf(documentId: String): File
-    fun pageFileExists(imagePath: String): Boolean
+    suspend fun pageFileExists(imagePath: String): Boolean
 }

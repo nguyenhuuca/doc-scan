@@ -63,17 +63,18 @@ class ImageStorage(private val filesDir: File) {
         File(filesDir, "documents/$documentId").deleteRecursively()
     }
 
-    fun loadPageBitmap(imagePath: String): Bitmap? {
+    suspend fun loadPageBitmap(imagePath: String): Bitmap? = withContext(Dispatchers.IO) {
         val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(imagePath, opts)
-        if (opts.outWidth <= 0) return null
+        if (opts.outWidth <= 0) return@withContext null
         // Cap at storage max to bound memory on large source files
         opts.inSampleSize = calcInSampleSize(opts.outWidth, opts.outHeight, 2480, 3508)
         opts.inJustDecodeBounds = false
-        return BitmapFactory.decodeFile(imagePath, opts)
+        BitmapFactory.decodeFile(imagePath, opts)
     }
 
-    fun pageFileExists(imagePath: String): Boolean = File(imagePath).exists()
+    suspend fun pageFileExists(imagePath: String): Boolean =
+        withContext(Dispatchers.IO) { File(imagePath).exists() }
 
     private fun downscaleIfNeeded(bitmap: Bitmap): Bitmap {
         val maxWidth = 2480

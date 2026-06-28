@@ -8,9 +8,12 @@ import androidx.lifecycle.viewModelScope
 import com.docscanner.data.repository.DocumentRepository
 import com.docscanner.domain.model.Page
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -27,6 +30,7 @@ data class EditUiState(
     val errorMessage: String? = null
 )
 
+@OptIn(FlowPreview::class)
 class EditViewModel(
     private val repository: DocumentRepository,
     savedStateHandle: SavedStateHandle
@@ -35,6 +39,7 @@ class EditViewModel(
     companion object {
         private const val MAX_UNDO_STACK = 5
         private const val UNDO_JPEG_QUALITY = 75
+        private const val SLIDER_DEBOUNCE_MS = 300L
     }
 
     val documentId: String = savedStateHandle["documentId"] ?: ""
@@ -49,8 +54,21 @@ class EditViewModel(
     private val _uiState = MutableStateFlow(EditUiState())
     val uiState: StateFlow<EditUiState> = _uiState.asStateFlow()
 
+    private val brightnessFlow = MutableSharedFlow<Float>(extraBufferCapacity = 1)
+    private val contrastFlow = MutableSharedFlow<Float>(extraBufferCapacity = 1)
+
     init {
         loadInitialPage()
+        viewModelScope.launch {
+            brightnessFlow.debounce(SLIDER_DEBOUNCE_MS).collect { value ->
+                applyTransform { bitmap -> ImageProcessor.adjustBrightness(bitmap, value) }
+            }
+        }
+        viewModelScope.launch {
+            contrastFlow.debounce(SLIDER_DEBOUNCE_MS).collect { value ->
+                applyTransform { bitmap -> ImageProcessor.adjustContrast(bitmap, value) }
+            }
+        }
     }
 
     private fun loadInitialPage() {
@@ -79,25 +97,31 @@ class EditViewModel(
 
     fun rotate() = applyTransform { bitmap -> ImageProcessor.rotateBitmap(bitmap) }
 
-    fun adjustBrightness(value: Float) = applyTransform { bitmap -> ImageProcessor.adjustBrightness(bitmap, value) }
+    fun adjustBrightness(value: Float) { brightnessFlow.tryEmit(value) }
 
-    fun adjustContrast(value: Float) = applyTransform { bitmap -> ImageProcessor.adjustContrast(bitmap, value) }
+    fun adjustContrast(value: Float) { contrastFlow.tryEmit(value) }
 
     fun toGrayscale() = applyTransform { bitmap -> ImageProcessor.toGrayscale(bitmap) }
 
     fun undo() {
-        if (undoStack.isEmpty()) return
-        val bytes = undoStack.removeLast()
-        val previous = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-        val old = _uiState.value.currentBitmap
-        _uiState.update {
-            it.copy(
-                currentBitmap = previous,
-                canUndo = undoStack.isNotEmpty(),
-                hasUnsavedChanges = undoStack.isNotEmpty()
-            )
+        viewModelScope.launch {
+            val bytes = transformMutex.withLock {
+                if (undoStack.isEmpty()) return@launch
+                undoStack.removeLast()
+            }
+            val previous = withContext(Dispatchers.Default) {
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            }
+            val old = _uiState.value.currentBitmap
+            _uiState.update {
+                it.copy(
+                    currentBitmap = previous,
+                    canUndo = undoStack.isNotEmpty(),
+                    hasUnsavedChanges = undoStack.isNotEmpty()
+                )
+            }
+            old?.recycle()
         }
-        old?.recycle()
     }
 
     fun save() {
@@ -132,26 +156,23 @@ class EditViewModel(
                     _uiState.update { it.copy(isProcessing = false) }
                     return@withLock
                 }
-                runCatching { withContext(Dispatchers.Default) { transform(current) } }
-                    .onSuccess { newBitmap ->
-                        pushToUndoStack(current)
-                        _uiState.update {
-                            it.copy(currentBitmap = newBitmap, isProcessing = false, hasUnsavedChanges = true, canUndo = true)
-                        }
+                runCatching {
+                    withContext(Dispatchers.Default) {
+                        val newBitmap = transform(current)
+                        val stream = ByteArrayOutputStream()
+                        current.compress(Bitmap.CompressFormat.JPEG, UNDO_JPEG_QUALITY, stream)
+                        newBitmap to stream.toByteArray()
                     }
-                    .onFailure {
-                        _uiState.update { it.copy(isProcessing = false, errorMessage = "Processing failed.") }
+                }.onSuccess { (newBitmap, undoBytes) ->
+                    undoStack.addLast(undoBytes)
+                    if (undoStack.size > MAX_UNDO_STACK) undoStack.removeFirst()
+                    _uiState.update {
+                        it.copy(currentBitmap = newBitmap, isProcessing = false, hasUnsavedChanges = true, canUndo = true)
                     }
+                }.onFailure {
+                    _uiState.update { it.copy(isProcessing = false, errorMessage = "Processing failed.") }
+                }
             }
-        }
-    }
-
-    private fun pushToUndoStack(bitmap: Bitmap) {
-        val stream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, UNDO_JPEG_QUALITY, stream)
-        undoStack.addLast(stream.toByteArray())
-        if (undoStack.size > MAX_UNDO_STACK) {
-            undoStack.removeFirst()
         }
     }
 

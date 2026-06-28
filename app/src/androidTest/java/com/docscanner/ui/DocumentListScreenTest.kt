@@ -45,7 +45,7 @@ class DocumentListScreenTest {
         override suspend fun getPageCount(id: String): Int = 0
         override suspend fun getPagesForDocument(id: String): List<Page> = emptyList()
         override suspend fun exportPdf(id: String): File = File("/f.pdf")
-        override fun pageFileExists(path: String): Boolean = true
+        override suspend fun pageFileExists(path: String): Boolean = true
     }
 
     @Test

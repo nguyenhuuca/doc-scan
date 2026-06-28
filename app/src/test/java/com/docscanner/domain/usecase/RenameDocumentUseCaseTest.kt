@@ -31,7 +31,7 @@ class RenameDocumentUseCaseTest {
         override suspend fun getPageCount(documentId: String): Int = 0
         override suspend fun getPagesForDocument(documentId: String): List<Page> = emptyList()
         override suspend fun exportPdf(documentId: String): File = File("/fake.pdf")
-        override fun pageFileExists(imagePath: String): Boolean = true
+        override suspend fun pageFileExists(imagePath: String): Boolean = true
     }
 
     @Test

@@ -129,6 +129,6 @@ class EdgeCaseTest {
         override suspend fun getPageCount(id: String): Int = pageList.size
         override suspend fun getPagesForDocument(id: String): List<Page> = pageList
         override suspend fun exportPdf(id: String): File = File("/f.pdf")
-        override fun pageFileExists(path: String): Boolean = pageFileExists
+        override suspend fun pageFileExists(path: String): Boolean = pageFileExists
     }
 }

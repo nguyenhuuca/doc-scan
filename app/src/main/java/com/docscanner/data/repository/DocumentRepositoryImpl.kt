@@ -115,9 +115,16 @@ class DocumentRepositoryImpl(
             thumbnailGenerator.generateThumbnailFromPath(documentId, newFirstPage.imagePath)
         } else null
         database.withTransaction {
-            reorderedPages.forEachIndexed { index, page ->
-                pageDao.updatePageNumber(page.id, index + 1)
+            val updated = reorderedPages.mapIndexed { index, page ->
+                PageEntity(
+                    id = page.id,
+                    documentId = page.documentId,
+                    pageNumber = index + 1,
+                    imagePath = page.imagePath,
+                    createdAt = page.createdAt
+                )
             }
+            pageDao.updatePages(updated)
             val existingThumb = documentDao.getDocumentById(documentId)?.thumbnailPath
             documentDao.updateDocumentMeta(documentId, reorderedPages.size, now, thumbnailPath ?: existingThumb)
         }
@@ -140,11 +147,10 @@ class DocumentRepositoryImpl(
         } else null
         database.withTransaction {
             pageDao.deletePage(pageId)
-            remainingPages.forEachIndexed { index, page ->
-                if (page.pageNumber != index + 1) {
-                    pageDao.updatePageNumber(page.id, index + 1)
-                }
+            val renumbered = remainingPages.mapIndexedNotNull { index, page ->
+                if (page.pageNumber != index + 1) page.copy(pageNumber = index + 1) else null
             }
+            if (renumbered.isNotEmpty()) pageDao.updatePages(renumbered)
             val existingThumb = documentDao.getDocumentById(documentId)?.thumbnailPath
             documentDao.updateDocumentMeta(documentId, remainingPages.size, now, thumbnailPath ?: existingThumb)
         }
@@ -166,7 +172,7 @@ class DocumentRepositoryImpl(
         return pdfGenerator.generatePdf(documentId, pages.map { it.imagePath })
     }
 
-    override fun pageFileExists(imagePath: String): Boolean =
+    override suspend fun pageFileExists(imagePath: String): Boolean =
         imageStorage.pageFileExists(imagePath)
 
     private fun DocumentEntity.toDomain() = Document(

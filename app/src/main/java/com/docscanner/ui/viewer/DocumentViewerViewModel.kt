@@ -30,6 +30,7 @@ import java.util.UUID
 data class DocumentViewerUiState(
     val document: Document? = null,
     val pages: List<Page> = emptyList(),
+    val missingPageIds: Set<String> = emptySet(),
     val isLoading: Boolean = true,
     val isExporting: Boolean = false,
     val canAddPage: Boolean = false,
@@ -69,12 +70,16 @@ class DocumentViewerViewModel(
             runCatching {
                 val document = repository.getDocumentById(documentId)
                 val pages = repository.getPagesForDocument(documentId)
-                document to pages
-            }.onSuccess { (document, pages) ->
+                val missing = withContext(Dispatchers.IO) {
+                    pages.filter { !repository.pageFileExists(it.imagePath) }.map { it.id }.toSet()
+                }
+                Triple(document, pages, missing)
+            }.onSuccess { (document, pages, missing) ->
                 _uiState.update {
                     it.copy(
                         document = document,
                         pages = pages,
+                        missingPageIds = missing,
                         isLoading = false,
                         canAddPage = pages.size < MAX_PAGES
                     )
@@ -130,7 +135,7 @@ class DocumentViewerViewModel(
         return if (file.exists()) file else null
     }
 
-    fun isPageFileMissing(page: Page): Boolean = !repository.pageFileExists(page.imagePath)
+    fun isPageFileMissing(page: Page): Boolean = _uiState.value.missingPageIds.contains(page.id)
 
     fun clearError() { _uiState.update { it.copy(errorMessage = null) } }
     fun clearExportedFile() { _uiState.update { it.copy(exportedFile = null) } }
