@@ -14,8 +14,10 @@ local.properties
 *.iws
 *.ipr
 
-# Claude AI workspace
-.claude/
+# Claude AI workspace — ignore local settings and agent worktrees, commit rules
+.claude/settings.json
+.claude/settings.local.json
+.claude/worktrees/
 
 # OS
 .DS_Store
