@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Doc Scanner</string>
+    <string name="scan_new_document">Scan new document</string>
+    <string name="document_limit_reached">Document limit reached (100). Delete existing documents to create new ones.</string>
+    <string name="low_storage_warning_title">Low Storage</string>
+    <string name="low_storage_warning_message">Less than 100 MB available. Your scan may fail to save. Free up space and try again.</string>
+    <string name="low_storage_blocked_message">Not enough storage. Free up at least 50 MB to scan.</string>
+    <string name="scan_failed">Scan failed. Please try again.</string>
+    <string name="export_failed">Export failed. Please try again.</string>
+    <string name="rename_document">Rename document</string>
+    <string name="delete_document">Delete document</string>
+    <string name="delete_confirm_message">This document and all its pages will be permanently deleted. This cannot be undone.</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="save">Save</string>
+    <string name="discard">Discard</string>
+    <string name="unsaved_changes_message">You have unsaved changes. Discard them?</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="camera_permission_rationale">Camera access is required to scan documents.</string>
+    <string name="gms_update_required">Google Play Services needs to be updated to use document scanning.</string>
+    <string name="update">Update</string>
+    <string name="export_pdf">Export PDF</string>
+    <string name="uninstall_warning">Warning: All documents will be deleted when you uninstall this app.</string>
+</resources>

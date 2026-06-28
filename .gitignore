@@ -1,0 +1,28 @@
+# Built outputs
+build/
+.gradle/
+*.apk
+*.aab
+*.aar
+
+# Local config (contains SDK path — machine-specific)
+local.properties
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Claude AI workspace
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Kotlin scratch files
+*.scratch
+
+# Test reports
+app/build/
