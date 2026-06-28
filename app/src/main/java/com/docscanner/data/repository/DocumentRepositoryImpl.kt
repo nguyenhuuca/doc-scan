@@ -36,16 +36,7 @@ class DocumentRepositoryImpl(
         val imagePath = imageStorage.savePageImage(documentId, 1, firstPageBitmap, now)
         val thumbnailPath = thumbnailGenerator.generateThumbnail(documentId, firstPageBitmap)
 
-        val pageId = UUID.randomUUID().toString()
-        val pageEntity = PageEntity(
-            id = pageId,
-            documentId = documentId,
-            pageNumber = 1,
-            imagePath = imagePath,
-            createdAt = now
-        )
-        pageDao.insertPage(pageEntity)
-
+        // Insert document FIRST — page has a FK to documents.id
         val docEntity = DocumentEntity(
             id = documentId,
             name = name,
@@ -55,6 +46,16 @@ class DocumentRepositoryImpl(
             thumbnailPath = thumbnailPath
         )
         documentDao.insertDocument(docEntity)
+
+        val pageEntity = PageEntity(
+            id = UUID.randomUUID().toString(),
+            documentId = documentId,
+            pageNumber = 1,
+            imagePath = imagePath,
+            createdAt = now
+        )
+        pageDao.insertPage(pageEntity)
+
         return docEntity.toDomain()
     }
 
