@@ -22,7 +22,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -30,7 +34,9 @@ import androidx.compose.ui.unit.dp
 import com.docscanner.BuildConfig
 import com.docscanner.MyApplication
 import com.docscanner.R
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,6 +51,11 @@ fun SettingsScreen(onNavigateBack: () -> Unit) {
 
     val storageUsedBytes = remember {
         calculateStorageUsed(File(context.filesDir, "documents"))
+    }
+
+    var releaseNotes by remember { mutableStateOf<List<ReleaseNote>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        releaseNotes = withContext(Dispatchers.IO) { loadReleaseNotes(context) }
     }
 
     Scaffold(

@@ -1,31 +1,53 @@
 package com.docscanner.ui.settings
 
+import android.content.Context
+
 data class ReleaseNote(
     val version: String,
     val date: String,
     val changes: List<String>
 )
 
-val releaseNotes = listOf(
-    ReleaseNote(
-        version = "1.0.1",
-        date = "28/06/2026",
-        changes = listOf(
-            "Sửa lỗi build CI — không ảnh hưởng đến chức năng"
-        )
-    ),
-    ReleaseNote(
-        version = "1.0.0",
-        date = "28/06/2026",
-        changes = listOf(
-            "Quét tài liệu bằng camera với nhận dạng viền tự động (ML Kit)",
-            "Chế độ crop thủ công cho thiết bị không có Google Play Services",
-            "Chỉnh sửa ảnh: xoay, độ sáng, độ tương phản, thang xám",
-            "Undo tối đa 5 bước khi chỉnh sửa",
-            "Ghép nhiều trang thành một tài liệu, kéo thả để sắp xếp lại",
-            "Xuất PDF và chia sẻ qua Gmail, Zalo",
-            "Quản lý tài liệu: đổi tên, xóa, xem thumbnail",
-            "Lưu trữ riêng tư trên thiết bị — không cần internet, không cần tài khoản"
-        )
-    )
-)
+fun loadReleaseNotes(context: Context): List<ReleaseNote> {
+    val yaml = context.assets.open("release_notes.yaml").bufferedReader().readText()
+    return parseReleaseNotes(yaml)
+}
+
+internal fun parseReleaseNotes(yaml: String): List<ReleaseNote> {
+    val notes = mutableListOf<ReleaseNote>()
+    var version = ""
+    var date = ""
+    val changes = mutableListOf<String>()
+    var inChanges = false
+
+    fun flush() {
+        if (version.isNotEmpty()) {
+            notes.add(ReleaseNote(version, date, changes.toList()))
+            changes.clear()
+            version = ""
+            date = ""
+            inChanges = false
+        }
+    }
+
+    for (rawLine in yaml.lines()) {
+        val trimmed = rawLine.trimStart()
+        when {
+            trimmed.startsWith("- version:") -> {
+                flush()
+                version = trimmed.substringAfter("version:").trim().trim('"')
+            }
+            trimmed.startsWith("date:") -> {
+                date = trimmed.substringAfter("date:").trim().trim('"')
+            }
+            trimmed.startsWith("changes:") -> {
+                inChanges = true
+            }
+            inChanges && trimmed.startsWith("- ") -> {
+                changes.add(trimmed.removePrefix("- ").trim().trim('"'))
+            }
+        }
+    }
+    flush()
+    return notes
+}
