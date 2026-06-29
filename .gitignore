@@ -10,6 +10,7 @@ local.properties
 
 # Release keystore — never commit, store as GitHub Secret
 keystore/
+*.jks
 
 # IDE
 .idea/
