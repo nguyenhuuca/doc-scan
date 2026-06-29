@@ -1,0 +1,31 @@
+package com.docscanner.ui.settings
+
+data class ReleaseNote(
+    val version: String,
+    val date: String,
+    val changes: List<String>
+)
+
+val releaseNotes = listOf(
+    ReleaseNote(
+        version = "1.0.1",
+        date = "28/06/2026",
+        changes = listOf(
+            "Sửa lỗi build CI — không ảnh hưởng đến chức năng"
+        )
+    ),
+    ReleaseNote(
+        version = "1.0.0",
+        date = "28/06/2026",
+        changes = listOf(
+            "Quét tài liệu bằng camera với nhận dạng viền tự động (ML Kit)",
+            "Chế độ crop thủ công cho thiết bị không có Google Play Services",
+            "Chỉnh sửa ảnh: xoay, độ sáng, độ tương phản, thang xám",
+            "Undo tối đa 5 bước khi chỉnh sửa",
+            "Ghép nhiều trang thành một tài liệu, kéo thả để sắp xếp lại",
+            "Xuất PDF và chia sẻ qua Gmail, Zalo",
+            "Quản lý tài liệu: đổi tên, xóa, xem thumbnail",
+            "Lưu trữ riêng tư trên thiết bị — không cần internet, không cần tài khoản"
+        )
+    )
+)
