@@ -8,6 +8,9 @@ build/
 # Local config (contains SDK path — machine-specific)
 local.properties
 
+# Release keystore — never commit, store as GitHub Secret
+keystore/
+
 # IDE
 .idea/
 *.iml
