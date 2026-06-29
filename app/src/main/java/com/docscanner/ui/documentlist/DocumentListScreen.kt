@@ -6,14 +6,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SortByAlpha
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -21,6 +29,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -101,11 +110,7 @@ fun DocumentListScreen(
             if (uiState.documentLimitReached) {
                 TooltipBox(
                     positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = {
-                        PlainTooltip {
-                            Text(stringResource(R.string.document_limit_reached))
-                        }
-                    },
+                    tooltip = { PlainTooltip { Text(stringResource(R.string.document_limit_reached)) } },
                     state = rememberTooltipState()
                 ) {
                     FloatingActionButton(onClick = {}, containerColor = MaterialTheme.colorScheme.surfaceVariant) {
@@ -120,64 +125,89 @@ fun DocumentListScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        if (uiState.documents.isEmpty() && !uiState.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("No documents yet", style = MaterialTheme.typography.titleLarge)
-                    Text(
-                        "Tap + to scan your first document",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            // Search + sort bar — only when more than 10 documents
+            if (uiState.totalDocumentCount > 10) {
+                SearchAndSortBar(
+                    query = uiState.searchQuery,
+                    sortOrder = uiState.sortOrder,
+                    onQueryChange = viewModel::setSearchQuery,
+                    onSortToggle = viewModel::toggleSortOrder,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                )
             }
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.padding(innerPadding)
-            ) {
-                items(uiState.documents, key = { it.id }) { document ->
-                    Box {
-                        DocumentCard(
-                            document = document,
-                            onClick = { onNavigateToViewer(document.id) },
-                            onLongClick = {
-                                selectedDocument = document
-                                documentForContextMenu = document
-                            }
+
+            when {
+                uiState.totalDocumentCount == 0 && !uiState.isLoading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("No documents yet", style = MaterialTheme.typography.titleLarge)
+                            Text(
+                                "Tap + to scan your first document",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                uiState.documents.isEmpty() && uiState.totalDocumentCount > 0 -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            "No results for \"${uiState.searchQuery}\"",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        if (documentForContextMenu?.id == document.id) {
-                            DropdownMenu(
-                                expanded = true,
-                                onDismissRequest = { documentForContextMenu = null }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text("Rename") },
-                                    onClick = {
-                                        showRenameDialog = true
-                                        documentForContextMenu = null
+                    }
+                }
+                else -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(uiState.documents, key = { it.id }) { document ->
+                            Box {
+                                DocumentCard(
+                                    document = document,
+                                    onClick = { onNavigateToViewer(document.id) },
+                                    onLongClick = {
+                                        selectedDocument = document
+                                        documentForContextMenu = document
                                     }
                                 )
-                                DropdownMenuItem(
-                                    text = { Text("Export PDF") },
-                                    onClick = {
-                                        selectedDocument?.let { viewModel.exportPdf(it.id) }
-                                        documentForContextMenu = null
+                                if (documentForContextMenu?.id == document.id) {
+                                    DropdownMenu(
+                                        expanded = true,
+                                        onDismissRequest = { documentForContextMenu = null }
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text("Rename") },
+                                            onClick = {
+                                                showRenameDialog = true
+                                                documentForContextMenu = null
+                                            }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Export PDF") },
+                                            onClick = {
+                                                selectedDocument?.let { viewModel.exportPdf(it.id) }
+                                                documentForContextMenu = null
+                                            }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Delete") },
+                                            onClick = {
+                                                showDeleteDialog = true
+                                                documentForContextMenu = null
+                                            }
+                                        )
                                     }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Delete") },
-                                    onClick = {
-                                        showDeleteDialog = true
-                                        documentForContextMenu = null
-                                    }
-                                )
+                                }
                             }
                         }
                     }
@@ -207,6 +237,43 @@ fun DocumentListScreen(
                     showDeleteDialog = false
                 },
                 onDismiss = { showDeleteDialog = false }
+            )
+        }
+    }
+}
+
+@Composable
+private fun SearchAndSortBar(
+    query: String,
+    sortOrder: SortOrder,
+    onQueryChange: (String) -> Unit,
+    onSortToggle: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            placeholder = { Text("Search documents...") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            trailingIcon = {
+                if (query.isNotEmpty()) {
+                    IconButton(onClick = { onQueryChange("") }) {
+                        Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                    }
+                }
+            },
+            singleLine = true,
+            modifier = Modifier.weight(1f)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        IconButton(onClick = onSortToggle) {
+            Icon(
+                imageVector = if (sortOrder == SortOrder.DATE_DESC) Icons.Default.Schedule else Icons.Default.SortByAlpha,
+                contentDescription = if (sortOrder == SortOrder.DATE_DESC) "Sort by name" else "Sort by date"
             )
         }
     }

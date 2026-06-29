@@ -2,7 +2,6 @@ package com.docscanner.ui.viewer
 
 import android.content.Context
 import android.graphics.BitmapFactory
-import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -140,25 +139,32 @@ class DocumentViewerViewModel(
     fun clearError() { _uiState.update { it.copy(errorMessage = null) } }
     fun clearExportedFile() { _uiState.update { it.copy(exportedFile = null) } }
 
-    fun importFromGallery(uri: Uri, context: Context) {
+    // items = list of (rawBytes, mimeType) read on the CALLING main thread immediately
+    // after the gallery result — URI permission may be scoped to the delivery window.
+    fun importFromGallery(items: List<Pair<ByteArray, String?>>) {
+        val validBytes = items
+            .filter { (_, mime) -> mime == "image/jpeg" || mime == "image/png" }
+            .map { (bytes, _) -> bytes }
+
+        if (validBytes.isEmpty()) {
+            _uiState.update { it.copy(errorMessage = "Only JPEG and PNG images are supported.") }
+            return
+        }
+
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             runCatching {
-                val mimeType = context.contentResolver.getType(uri)
-                if (mimeType != "image/jpeg" && mimeType != "image/png") {
-                    error("Only JPEG and PNG images are supported.")
+                val bitmaps = withContext(Dispatchers.Default) {
+                    validBytes.mapNotNull { bytes ->
+                        val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
+                        opts.inSampleSize = calcInSampleSize(opts.outWidth, opts.outHeight, MAX_IMPORT_WIDTH, MAX_IMPORT_HEIGHT)
+                        opts.inJustDecodeBounds = false
+                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
+                    }
                 }
-                val bitmap = withContext(Dispatchers.IO) {
-                    val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                        ?: error("Failed to read image.")
-                    val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
-                    opts.inSampleSize = calcInSampleSize(opts.outWidth, opts.outHeight, MAX_IMPORT_WIDTH, MAX_IMPORT_HEIGHT)
-                    opts.inJustDecodeBounds = false
-                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
-                        ?: error("Failed to decode image.")
-                }
-                saveDocumentUseCase.addPage(documentId, bitmap)
+                if (bitmaps.isEmpty()) error("Failed to decode images.")
+                bitmaps.forEach { bitmap -> saveDocumentUseCase.addPage(documentId, bitmap) }
             }.onSuccess {
                 loadDocument()
             }.onFailure { e ->

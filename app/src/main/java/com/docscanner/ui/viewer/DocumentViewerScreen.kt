@@ -1,6 +1,9 @@
 package com.docscanner.ui.viewer
 
 import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -63,6 +66,22 @@ fun DocumentViewerScreen(
     val context = LocalContext.current
     var showPageMenu by remember { mutableStateOf(false) }
 
+    val galleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia()
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            // Read bytes on main thread immediately — URI permission scoped to delivery window
+            val items = uris.mapNotNull { uri ->
+                val mime = runCatching { context.contentResolver.getType(uri) }.getOrNull()
+                val bytes = runCatching {
+                    context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                }.getOrNull()
+                if (bytes != null) bytes to mime else null
+            }
+            viewModel.importFromGallery(items)
+        }
+    }
+
     val pagerState = rememberPagerState(pageCount = { uiState.pages.size })
 
     LaunchedEffect(uiState.documentDeleted) {
@@ -111,6 +130,16 @@ fun DocumentViewerScreen(
                                     viewModel.exportPdf()
                                     showPageMenu = false
                                 }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Import from Gallery") },
+                                onClick = {
+                                    galleryLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                    showPageMenu = false
+                                },
+                                enabled = uiState.canAddPage
                             )
                             val currentPage = uiState.pages.getOrNull(pagerState.currentPage)
                             if (currentPage != null) {
