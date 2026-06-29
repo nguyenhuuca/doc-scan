@@ -14,8 +14,7 @@ local.properties
 *.iws
 *.ipr
 
-# Claude AI workspace — ignore local settings and agent worktrees, commit rules
-.claude/settings.json
+# Claude AI workspace — commit rules and settings, ignore local overrides
 .claude/settings.local.json
 .claude/worktrees/
 
