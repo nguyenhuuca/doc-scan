@@ -130,8 +130,8 @@ class DocumentViewerViewModel(
     }
 
     fun exportPageAsImage(page: Page): File? {
-        val file = File(page.imagePath)
-        return if (file.exists()) file else null
+        if (_uiState.value.missingPageIds.contains(page.id)) return null
+        return File(page.imagePath)
     }
 
     fun isPageFileMissing(page: Page): Boolean = _uiState.value.missingPageIds.contains(page.id)

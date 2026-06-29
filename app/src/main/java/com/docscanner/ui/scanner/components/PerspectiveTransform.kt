@@ -19,7 +19,7 @@ data class Quad(
 object PerspectiveTransform {
 
     suspend fun transform(source: Bitmap, quad: Quad, outputWidth: Int = AppConfig.IMAGE_MAX_WIDTH, outputHeight: Int = AppConfig.IMAGE_MAX_HEIGHT): Bitmap =
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             val srcPoints = floatArrayOf(
                 quad.topLeft.x, quad.topLeft.y,
                 quad.topRight.x, quad.topRight.y,

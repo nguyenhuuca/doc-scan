@@ -40,7 +40,9 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.docscanner.ui.scanner.ScannerViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
 
@@ -91,10 +93,16 @@ fun ManualCropScreen(
                         ContextCompat.getMainExecutor(context),
                         object : ImageCapture.OnImageSavedCallback {
                             override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                                val bitmap = BitmapFactory.decodeFile(outputFile.absolutePath)
-                                capturedBitmap = bitmap
-                                quad = PerspectiveTransform.defaultQuad(bitmap.width.toFloat(), bitmap.height.toFloat())
-                                outputFile.delete()
+                                scope.launch {
+                                    val bitmap = withContext(Dispatchers.IO) {
+                                        BitmapFactory.decodeFile(outputFile.absolutePath)
+                                    }
+                                    outputFile.delete()
+                                    bitmap?.let {
+                                        capturedBitmap = it
+                                        quad = PerspectiveTransform.defaultQuad(it.width.toFloat(), it.height.toFloat())
+                                    }
+                                }
                             }
                             override fun onError(exception: ImageCaptureException) {
                                 // Capture failed — stay on preview

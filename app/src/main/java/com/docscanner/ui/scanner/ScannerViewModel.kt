@@ -72,7 +72,7 @@ class ScannerViewModel(
             runCatching {
                 if (rawBytes.isEmpty()) error("Could not read scanned images from scanner")
 
-                val bitmaps = withContext(Dispatchers.IO) {
+                val bitmaps = withContext(Dispatchers.Default) {
                     rawBytes.mapNotNull { bytes ->
                         val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)

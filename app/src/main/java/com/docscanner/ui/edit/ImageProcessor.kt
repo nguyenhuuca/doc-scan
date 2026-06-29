@@ -12,13 +12,13 @@ import kotlinx.coroutines.withContext
 object ImageProcessor {
 
     suspend fun rotateBitmap(bitmap: Bitmap, degrees: Float = 90f): Bitmap =
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             val matrix = Matrix().apply { postRotate(degrees) }
             Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
         }
 
     suspend fun adjustBrightness(bitmap: Bitmap, brightness: Float): Bitmap =
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             // brightness: -255f to +255f; 0 = no change
             val colorMatrix = ColorMatrix(floatArrayOf(
                 1f, 0f, 0f, 0f, brightness,
@@ -30,7 +30,7 @@ object ImageProcessor {
         }
 
     suspend fun adjustContrast(bitmap: Bitmap, contrast: Float): Bitmap =
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             // contrast: 0f to 2f; 1 = no change
             val scale = contrast
             val translate = (-.5f * scale + .5f) * 255f
@@ -44,7 +44,7 @@ object ImageProcessor {
         }
 
     suspend fun toGrayscale(bitmap: Bitmap): Bitmap =
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             val colorMatrix = ColorMatrix().apply { setSaturation(0f) }
             applyColorMatrix(bitmap, colorMatrix)
         }

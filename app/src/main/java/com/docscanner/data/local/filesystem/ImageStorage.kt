@@ -30,16 +30,18 @@ class ImageStorage(private val filesDir: File) {
         pageNumber: Int,
         bitmap: Bitmap,
         updatedAt: Long
-    ): String = withContext(Dispatchers.IO) {
-        val dir = documentPagesDir(documentId)
-        val filename = pageFilename(pageNumber, updatedAt)
-        val file = File(dir, filename)
-        val scaled = downscaleIfNeeded(bitmap)
-        FileOutputStream(file).use { out ->
-            scaled.compress(Bitmap.CompressFormat.JPEG, AppConfig.IMAGE_JPEG_QUALITY, out)
+    ): String {
+        val scaled = downscaleIfNeeded(bitmap)  // CPU on Default
+        return withContext(Dispatchers.IO) {
+            val dir = documentPagesDir(documentId)
+            val filename = pageFilename(pageNumber, updatedAt)
+            val file = File(dir, filename)
+            FileOutputStream(file).use { out ->
+                scaled.compress(Bitmap.CompressFormat.JPEG, AppConfig.IMAGE_JPEG_QUALITY, out)
+            }
+            if (scaled !== bitmap) scaled.recycle()
+            file.absolutePath
         }
-        if (scaled !== bitmap) scaled.recycle()
-        file.absolutePath
     }
 
     suspend fun updatePageImage(
@@ -48,11 +50,11 @@ class ImageStorage(private val filesDir: File) {
         bitmap: Bitmap,
         oldImagePath: String?,
         updatedAt: Long
-    ): String = withContext(Dispatchers.IO) {
+    ): String {
         if (oldImagePath != null) {
-            File(oldImagePath).delete()
+            withContext(Dispatchers.IO) { File(oldImagePath).delete() }
         }
-        savePageImage(documentId, pageNumber, bitmap, updatedAt)
+        return savePageImage(documentId, pageNumber, bitmap, updatedAt)
     }
 
     suspend fun deletePageImage(imagePath: String) = withContext(Dispatchers.IO) {
@@ -77,7 +79,7 @@ class ImageStorage(private val filesDir: File) {
     suspend fun pageFileExists(imagePath: String): Boolean =
         withContext(Dispatchers.IO) { File(imagePath).exists() }
 
-    private fun downscaleIfNeeded(bitmap: Bitmap): Bitmap {
+    private suspend fun downscaleIfNeeded(bitmap: Bitmap): Bitmap {
         val maxWidth = AppConfig.IMAGE_MAX_WIDTH
         val maxHeight = AppConfig.IMAGE_MAX_HEIGHT
         if (bitmap.width <= maxWidth && bitmap.height <= maxHeight) return bitmap
@@ -86,6 +88,8 @@ class ImageStorage(private val filesDir: File) {
         val scale = minOf(widthRatio, heightRatio)
         val newWidth = (bitmap.width * scale).toInt()
         val newHeight = (bitmap.height * scale).toInt()
-        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+        return withContext(Dispatchers.Default) {
+            Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+        }
     }
 }
