@@ -1,3 +1,10 @@
+- version: "1.4.0"
+  date: "29/06/2026"
+  changes:
+    - "Cải thiện hiệu năng xử lý ảnh — xoay, điều chỉnh độ sáng/tương phản và cắt phối cảnh giờ chạy mượt hơn, không còn giật lag"
+    - "Thanh trượt độ sáng và tương phản phản hồi trực tiếp khi kéo thay vì chờ thả tay"
+    - "Sửa nhiều lỗi nội bộ: giới hạn trang/tài liệu hiển thị đúng, xóa trang an toàn hơn, dọn dẹp code không dùng"
+
 - version: "1.3.0"
   date: "29/06/2026"
   changes:
