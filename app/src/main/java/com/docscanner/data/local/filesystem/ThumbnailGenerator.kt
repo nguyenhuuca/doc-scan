@@ -2,6 +2,7 @@ package com.docscanner.data.local.filesystem
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import com.docscanner.common.AppConfig
 import com.docscanner.common.calcInSampleSize
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -10,8 +11,16 @@ import java.io.FileOutputStream
 
 class ThumbnailGenerator(private val filesDir: File) {
 
-    private fun thumbnailFile(documentId: String): File =
-        File(filesDir, "documents/$documentId/thumbnail.jpg")
+    private fun requireValidId(documentId: String) {
+        require(documentId.matches(Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"))) {
+            "Invalid document ID format"
+        }
+    }
+
+    private fun thumbnailFile(documentId: String): File {
+        requireValidId(documentId)
+        return File(filesDir, "documents/$documentId/thumbnail.jpg")
+    }
 
     suspend fun generateThumbnail(
         documentId: String,
@@ -21,7 +30,7 @@ class ThumbnailGenerator(private val filesDir: File) {
         file.parentFile?.mkdirs()
         val scaled = scaleThumbnail(sourceBitmap)
         FileOutputStream(file).use { out ->
-            scaled.compress(Bitmap.CompressFormat.JPEG, 50, out)
+            scaled.compress(Bitmap.CompressFormat.JPEG, AppConfig.THUMBNAIL_JPEG_QUALITY, out)
         }
         if (scaled !== sourceBitmap) scaled.recycle()
         file.absolutePath
@@ -34,7 +43,8 @@ class ThumbnailGenerator(private val filesDir: File) {
         val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(sourceImagePath, opts)
         if (opts.outWidth <= 0) return@withContext null
-        opts.inSampleSize = calcInSampleSize(opts.outWidth, opts.outHeight, 256, 256)
+        val maxSize = AppConfig.THUMBNAIL_MAX_SIZE
+        opts.inSampleSize = calcInSampleSize(opts.outWidth, opts.outHeight, maxSize, maxSize)
         opts.inJustDecodeBounds = false
         val bitmap = BitmapFactory.decodeFile(sourceImagePath, opts) ?: return@withContext null
         val path = generateThumbnail(documentId, bitmap)
@@ -42,14 +52,8 @@ class ThumbnailGenerator(private val filesDir: File) {
         path
     }
 
-    fun getThumbnailPath(documentId: String): String =
-        thumbnailFile(documentId).absolutePath
-
-    fun thumbnailExists(documentId: String): Boolean =
-        thumbnailFile(documentId).exists()
-
     private fun scaleThumbnail(bitmap: Bitmap): Bitmap {
-        val maxSize = 256
+        val maxSize = AppConfig.THUMBNAIL_MAX_SIZE
         if (bitmap.width == 0 || bitmap.height == 0) return bitmap
         if (bitmap.width <= maxSize && bitmap.height <= maxSize) return bitmap
         val scale = maxSize.toFloat() / maxOf(bitmap.width, bitmap.height)

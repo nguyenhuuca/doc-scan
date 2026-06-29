@@ -44,7 +44,7 @@ class DocumentListViewModel(
 ) : ViewModel() {
 
     companion object {
-        val MAX_DOCUMENTS = AppConfig.MAX_DOCUMENTS
+        private val MAX_DOCUMENTS = AppConfig.MAX_DOCUMENTS
     }
 
     private val _errorMessage = MutableStateFlow<String?>(null)
@@ -95,7 +95,7 @@ class DocumentListViewModel(
             runCatching { renameDocumentUseCase(documentId, newName) }
                 .onFailure { e ->
                     _errorMessage.value = when (e) {
-                        is DocumentNameException -> e.message
+                        is DocumentNameException -> e.message ?: "Invalid document name."
                         else -> "Failed to rename document."
                     }
                 }

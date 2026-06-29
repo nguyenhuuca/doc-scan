@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import com.docscanner.common.AppConfig
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanner
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_JPEG
@@ -51,7 +52,7 @@ fun rememberMlKitScannerLauncher(
             val options = GmsDocumentScannerOptions.Builder()
                 .setScannerMode(SCANNER_MODE_FULL)
                 .setGalleryImportAllowed(true)
-                .setPageLimit(50)
+                .setPageLimit(AppConfig.MAX_PAGES)
                 .setResultFormats(RESULT_FORMAT_JPEG)
                 .build()
 

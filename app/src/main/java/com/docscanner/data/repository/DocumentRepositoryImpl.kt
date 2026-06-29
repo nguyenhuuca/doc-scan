@@ -131,20 +131,21 @@ class DocumentRepositoryImpl(
     }
 
     override suspend fun deleteDocument(documentId: String) {
-        imageStorage.deleteDocumentImages(documentId)
+        // DB first — if this fails, files remain but are not referenced (orphaned, not dangling)
         documentDao.deleteDocument(documentId)
+        imageStorage.deleteDocumentImages(documentId)
     }
 
     override suspend fun deletePage(documentId: String, pageId: String) {
         val pages = pageDao.getPagesByDocumentIdSync(documentId)
         val pageToDelete = pages.find { it.id == pageId } ?: return
-        imageStorage.deletePageImage(pageToDelete.imagePath)
 
         val remainingPages = pages.filter { it.id != pageId }.sortedBy { it.pageNumber }
         val now = System.currentTimeMillis()
         val thumbnailPath = if (remainingPages.isNotEmpty() && pageToDelete.pageNumber == 1) {
             thumbnailGenerator.generateThumbnailFromPath(documentId, remainingPages.first().imagePath)
         } else null
+        // DB first — if this fails, image file is untouched (safe: no dangling DB reference)
         database.withTransaction {
             pageDao.deletePage(pageId)
             val renumbered = remainingPages.mapIndexedNotNull { index, page ->
@@ -154,6 +155,7 @@ class DocumentRepositoryImpl(
             val existingThumb = documentDao.getDocumentById(documentId)?.thumbnailPath
             documentDao.updateDocumentMeta(documentId, remainingPages.size, now, thumbnailPath ?: existingThumb)
         }
+        imageStorage.deletePageImage(pageToDelete.imagePath)
     }
 
     override suspend fun renameDocument(documentId: String, newName: String) {
@@ -169,7 +171,7 @@ class DocumentRepositoryImpl(
 
     override suspend fun exportPdf(documentId: String): File {
         val pages = pageDao.getPagesByDocumentIdSync(documentId).sortedBy { it.pageNumber }
-        return pdfGenerator.generatePdf(documentId, pages.map { it.imagePath })
+        return pdfGenerator.generatePdf(pages.map { it.imagePath })
     }
 
     override suspend fun pageFileExists(imagePath: String): Boolean =

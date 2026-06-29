@@ -152,8 +152,10 @@ fun EditScreen(
                     Text("Brightness: ${brightnessValue.toInt()}", style = MaterialTheme.typography.labelSmall)
                     Slider(
                         value = brightnessValue,
-                        onValueChange = { brightnessValue = it },
-                        onValueChangeFinished = { viewModel.adjustBrightness(brightnessValue) },
+                        onValueChange = {
+                            brightnessValue = it
+                            viewModel.adjustBrightness(it)
+                        },
                         valueRange = -255f..255f,
                         enabled = !uiState.isProcessing
                     )
@@ -164,8 +166,10 @@ fun EditScreen(
                     Text("Contrast: ${"%.2f".format(contrastValue)}", style = MaterialTheme.typography.labelSmall)
                     Slider(
                         value = contrastValue,
-                        onValueChange = { contrastValue = it },
-                        onValueChangeFinished = { viewModel.adjustContrast(contrastValue) },
+                        onValueChange = {
+                            contrastValue = it
+                            viewModel.adjustContrast(it)
+                        },
                         valueRange = 0f..2f,
                         enabled = !uiState.isProcessing
                     )

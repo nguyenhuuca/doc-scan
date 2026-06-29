@@ -17,9 +17,6 @@ interface DocumentDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertDocument(document: DocumentEntity)
 
-    @Update
-    suspend fun updateDocument(document: DocumentEntity)
-
     @Query("DELETE FROM documents WHERE id = :documentId")
     suspend fun deleteDocument(documentId: String)
 

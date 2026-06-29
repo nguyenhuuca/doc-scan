@@ -29,12 +29,6 @@ interface PageDao {
     @Query("DELETE FROM pages WHERE id = :pageId")
     suspend fun deletePage(pageId: String)
 
-    @Query("DELETE FROM pages WHERE documentId = :documentId")
-    suspend fun deletePagesByDocumentId(documentId: String)
-
     @Query("SELECT COUNT(*) FROM pages WHERE documentId = :documentId")
     suspend fun getPageCount(documentId: String): Int
-
-    @Query("UPDATE pages SET pageNumber = :pageNumber WHERE id = :pageId")
-    suspend fun updatePageNumber(pageId: String, pageNumber: Int)
 }

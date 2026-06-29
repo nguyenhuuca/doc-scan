@@ -38,4 +38,12 @@ object AppConfig {
     const val MAX_PAGES           = 50
     /** Minimum free storage required before any save operation (50 MB). */
     const val MIN_STORAGE_BYTES   = 50L * 1024 * 1024
+    /** Storage warning threshold — warn user when below this level (100 MB). */
+    const val MIN_STORAGE_WARNING_BYTES = 100L * 1024 * 1024
+
+    // ── Thumbnail ──────────────────────────────────────────────────────────────
+    /** Maximum thumbnail dimension in pixels (square). */
+    const val THUMBNAIL_MAX_SIZE    = 256
+    /** JPEG quality for thumbnail images — lower than page quality to save space. */
+    const val THUMBNAIL_JPEG_QUALITY = 50
 }

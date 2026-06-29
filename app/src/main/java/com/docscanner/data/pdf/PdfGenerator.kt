@@ -26,7 +26,7 @@ class PdfGenerator(private val cacheDir: File) {
 
     private data class JpegPage(val path: String, val width: Int, val height: Int)
 
-    suspend fun generatePdf(documentId: String, pageImagePaths: List<String>): File =
+    suspend fun generatePdf(pageImagePaths: List<String>): File =
         withContext(Dispatchers.IO) {
             val pages = pageImagePaths.mapNotNull { path ->
                 val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }

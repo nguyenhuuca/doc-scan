@@ -46,7 +46,7 @@ class ScannerViewModel(
         val state = StorageChecker.check(context.filesDir)
         when (state) {
             is StorageState.Blocked -> {
-                _uiState.update { it.copy(errorMessage = "Not enough storage. Free up at least 50 MB to scan.") }
+                _uiState.update { it.copy(errorMessage = "Not enough storage. Free up at least ${AppConfig.MIN_STORAGE_BYTES / (1024 * 1024)} MB to scan.") }
             }
             is StorageState.Warning -> {
                 _uiState.update { it.copy(showStorageWarning = true, availableStorageBytes = state.availableBytes) }
@@ -99,8 +99,8 @@ class ScannerViewModel(
                 _uiState.update { it.copy(isProcessing = false, savedDocumentId = docId) }
             }.onFailure { e ->
                 val message = when (e) {
-                    is PageLimitException -> "Page limit (50) reached."
-                    is DocumentLimitException -> "Document limit (100) reached."
+                    is PageLimitException -> "Page limit (${AppConfig.MAX_PAGES}) reached."
+                    is DocumentLimitException -> "Document limit (${AppConfig.MAX_DOCUMENTS}) reached."
                     is StorageFullException -> "Not enough storage to save."
                     else -> "Failed to save scan. Please try again."
                 }
@@ -123,7 +123,7 @@ class ScannerViewModel(
                 _uiState.update { it.copy(isProcessing = false, savedDocumentId = docId) }
             }.onFailure { e ->
                 val message = when (e) {
-                    is PageLimitException -> "Page limit (50) reached."
+                    is PageLimitException -> "Page limit (${AppConfig.MAX_PAGES}) reached."
                     is StorageFullException -> "Not enough storage to save."
                     else -> "Failed to save. Please try again."
                 }

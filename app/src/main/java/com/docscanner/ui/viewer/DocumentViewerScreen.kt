@@ -154,15 +154,7 @@ fun DocumentViewerScreen(
                                     text = { Text("Export as image") },
                                     onClick = {
                                         viewModel.exportPageAsImage(currentPage)?.let { file ->
-                                            val uri = FileProvider.getUriForFile(
-                                                context, "${context.packageName}.fileprovider", file
-                                            )
-                                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                                type = "image/jpeg"
-                                                putExtra(Intent.EXTRA_STREAM, uri)
-                                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                            }
-                                            context.startActivity(Intent.createChooser(intent, "Share Image"))
+                                            shareImageFile(context, file)
                                         }
                                         showPageMenu = false
                                     }
@@ -248,4 +240,16 @@ fun DocumentViewerScreen(
             CircularProgressIndicator()
         }
     }
+}
+
+private fun shareImageFile(context: android.content.Context, file: java.io.File) {
+    val uri = androidx.core.content.FileProvider.getUriForFile(
+        context, "${context.packageName}.fileprovider", file
+    )
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "image/jpeg"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(intent, "Share Image"))
 }
