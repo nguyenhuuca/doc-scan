@@ -1,3 +1,10 @@
+- version: "1.2.0"
+  date: "29/06/2026"
+  changes:
+    - "Import ảnh từ thư viện — thêm trang từ Gallery, không cần chụp lại"
+    - "Tìm kiếm tài liệu theo tên (xuất hiện khi có hơn 10 tài liệu)"
+    - "Sắp xếp danh sách theo ngày hoặc theo tên A-Z"
+
 - version: "1.1.0"
   date: "29/06/2026"
   changes:
