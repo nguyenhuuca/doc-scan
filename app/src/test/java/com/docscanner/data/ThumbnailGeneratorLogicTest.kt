@@ -1,5 +1,6 @@
 package com.docscanner.data
 
+import com.docscanner.common.AppConfig
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -7,7 +8,7 @@ import org.junit.Test
 // Tests the scale-to-thumbnail logic mirroring ThumbnailGenerator.scaleThumbnail().
 class ThumbnailGeneratorLogicTest {
 
-    private val MAX_SIZE = 256
+    private val MAX_SIZE = AppConfig.THUMBNAIL_MAX_SIZE
 
     @Test
     fun `square image at max size is not scaled`() {

@@ -42,6 +42,13 @@ class BitmapUtilsTest {
     }
 
     @Test
+    fun `landscape image drives sample size when width is dominant dimension`() {
+        // 4096 × 256 targeting 256 × 256 — width is 16× the target, height fits already
+        val result = calcInSampleSize(4096, 256, 256, 256)
+        assertTrue("Expected sampleSize >= 16 for 4096px width, got $result", result >= 16)
+    }
+
+    @Test
     fun `zero dimensions return 1 without divide-by-zero`() {
         assertEquals(1, calcInSampleSize(0, 0, 256, 256))
         assertEquals(1, calcInSampleSize(0, 512, 256, 256))
