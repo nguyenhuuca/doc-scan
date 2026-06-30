@@ -162,7 +162,9 @@ fun ManualCropScreen(
                     onClick = {
                         scope.launch {
                             isProcessing = true
-                            val cropped = PerspectiveTransform.transform(bitmap, currentQuad)
+                            val cropped = withContext(Dispatchers.Default) {
+                                PerspectiveTransform.transform(bitmap, currentQuad)
+                            }
                             viewModel.onManualCropComplete(cropped, context)
                             isProcessing = false
                         }

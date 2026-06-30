@@ -11,14 +11,8 @@ import java.io.FileOutputStream
 
 class ImageStorage(private val filesDir: File) {
 
-    private fun requireValidId(documentId: String) {
-        require(documentId.matches(Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"))) {
-            "Invalid document ID format"
-        }
-    }
-
     private fun documentPagesDir(documentId: String): File {
-        requireValidId(documentId)
+        requireValidDocumentId(documentId)
         return File(filesDir, "documents/$documentId/pages").also { it.mkdirs() }
     }
 
@@ -62,7 +56,7 @@ class ImageStorage(private val filesDir: File) {
     }
 
     suspend fun deleteDocumentImages(documentId: String) = withContext(Dispatchers.IO) {
-        requireValidId(documentId)
+        requireValidDocumentId(documentId)
         File(filesDir, "documents/$documentId").deleteRecursively()
     }
 

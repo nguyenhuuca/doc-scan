@@ -30,6 +30,14 @@ object AppConfig {
     const val EDIT_UNDO_JPEG_QUALITY  = 75
     /** Debounce delay for brightness/contrast sliders in milliseconds. */
     const val EDIT_SLIDER_DEBOUNCE_MS = 300L
+    /** Minimum brightness adjustment value for the edit slider. */
+    const val EDIT_BRIGHTNESS_MIN = -255f
+    /** Maximum brightness adjustment value for the edit slider. */
+    const val EDIT_BRIGHTNESS_MAX = 255f
+    /** Minimum contrast multiplier for the edit slider. */
+    const val EDIT_CONTRAST_MIN = 0f
+    /** Maximum contrast multiplier for the edit slider. */
+    const val EDIT_CONTRAST_MAX = 2f
 
     // ── Limits ─────────────────────────────────────────────────────────────────
     /** Maximum number of documents the app will store. */
@@ -46,4 +54,10 @@ object AppConfig {
     const val THUMBNAIL_MAX_SIZE    = 256
     /** JPEG quality for thumbnail images — lower than page quality to save space. */
     const val THUMBNAIL_JPEG_QUALITY = 50
+
+    // ── Cache ─────────────────────────────────────────────────────────────────
+    /** Subdirectory name inside cacheDir used for PDF and image exports. */
+    const val EXPORT_CACHE_DIR = "export"
+    /** Minimum document count before showing the search/sort bar on the list screen. */
+    const val SEARCH_BAR_MIN_DOCUMENTS = 10
 }

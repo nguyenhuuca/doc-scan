@@ -1,6 +1,5 @@
 package com.docscanner.ui.viewer
 
-import android.content.Context
 import android.graphics.BitmapFactory
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -25,7 +24,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.UUID
 
 data class DocumentViewerUiState(
     val document: Document? = null,
@@ -164,7 +162,7 @@ class DocumentViewerViewModel(
                     }
                 }
                 if (bitmaps.isEmpty()) error("Failed to decode images.")
-                bitmaps.forEach { bitmap -> saveDocumentUseCase.addPage(documentId, bitmap) }
+                saveDocumentUseCase.addPages(documentId, bitmaps)
             }.onSuccess {
                 loadDocument()
             }.onFailure { e ->
@@ -178,13 +176,4 @@ class DocumentViewerViewModel(
         }
     }
 
-    suspend fun copyPageToExportCache(page: Page, context: Context): File? =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                val exportDir = File(context.cacheDir, "export").also { it.mkdirs() }
-                val dest = File(exportDir, "page_${UUID.randomUUID()}.jpg")
-                File(page.imagePath).copyTo(dest, overwrite = true)
-                dest
-            }.getOrNull()
-        }
 }

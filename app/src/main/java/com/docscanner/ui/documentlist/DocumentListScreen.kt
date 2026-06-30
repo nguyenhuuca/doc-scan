@@ -53,6 +53,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.docscanner.R
+import com.docscanner.common.AppConfig
 import com.docscanner.domain.model.Document
 import com.docscanner.ui.documentlist.components.DeleteConfirmDialog
 import com.docscanner.ui.documentlist.components.DocumentCard
@@ -131,7 +132,7 @@ fun DocumentListScreen(
                 .padding(innerPadding)
         ) {
             // Search + sort bar — only when more than 10 documents
-            if (uiState.totalDocumentCount > 10) {
+            if (uiState.totalDocumentCount > AppConfig.SEARCH_BAR_MIN_DOCUMENTS) {
                 SearchAndSortBar(
                     query = uiState.searchQuery,
                     sortOrder = uiState.sortOrder,

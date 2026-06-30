@@ -200,7 +200,7 @@ fun DocumentViewerScreen(
             ) { pageIndex ->
                 val page = uiState.pages.getOrNull(pageIndex)
                 if (page == null) return@HorizontalPager
-                if (viewModel.isPageFileMissing(page)) {
+                if (page.id in uiState.missingPageIds) {
                     MissingPagePlaceholder(modifier = Modifier.fillMaxSize())
                 } else {
                     AsyncImage(

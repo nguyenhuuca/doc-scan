@@ -120,6 +120,8 @@ class EdgeCaseTest {
             Document("d", name, 0L, 0L, 1, null)
         override suspend fun addPage(id: String, bitmap: Bitmap): Page =
             Page("p", id, 1, "/p.jpg", 0L)
+        override suspend fun addPages(id: String, bitmaps: List<Bitmap>): List<Page> =
+            bitmaps.mapIndexed { i, _ -> Page("p$i", id, i + 1, "/p$i.jpg", 0L) }
         override suspend fun updatePage(id: String, page: Page, bitmap: Bitmap): Page = page
         override suspend fun reorderPages(id: String, pages: List<Page>) {}
         override suspend fun deleteDocument(id: String) { documentDeleted = true }

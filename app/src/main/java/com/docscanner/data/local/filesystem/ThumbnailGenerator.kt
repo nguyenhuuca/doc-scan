@@ -11,14 +11,8 @@ import java.io.FileOutputStream
 
 class ThumbnailGenerator(private val filesDir: File) {
 
-    private fun requireValidId(documentId: String) {
-        require(documentId.matches(Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"))) {
-            "Invalid document ID format"
-        }
-    }
-
     private fun thumbnailFile(documentId: String): File {
-        requireValidId(documentId)
+        requireValidDocumentId(documentId)
         return File(filesDir, "documents/$documentId/thumbnail.jpg")
     }
 
@@ -28,7 +22,7 @@ class ThumbnailGenerator(private val filesDir: File) {
     ): String = withContext(Dispatchers.IO) {
         val file = thumbnailFile(documentId)
         file.parentFile?.mkdirs()
-        val scaled = scaleThumbnail(sourceBitmap)
+        val scaled = withContext(Dispatchers.Default) { scaleThumbnail(sourceBitmap) }
         FileOutputStream(file).use { out ->
             scaled.compress(Bitmap.CompressFormat.JPEG, AppConfig.THUMBNAIL_JPEG_QUALITY, out)
         }
@@ -46,7 +40,9 @@ class ThumbnailGenerator(private val filesDir: File) {
         val maxSize = AppConfig.THUMBNAIL_MAX_SIZE
         opts.inSampleSize = calcInSampleSize(opts.outWidth, opts.outHeight, maxSize, maxSize)
         opts.inJustDecodeBounds = false
-        val bitmap = BitmapFactory.decodeFile(sourceImagePath, opts) ?: return@withContext null
+        val bitmap = withContext(Dispatchers.Default) {
+            BitmapFactory.decodeFile(sourceImagePath, opts)
+        } ?: return@withContext null
         val path = generateThumbnail(documentId, bitmap)
         bitmap.recycle()
         path

@@ -27,7 +27,6 @@ class SaveDocumentUseCase(
         internal val MIN_STORAGE_BYTES = AppConfig.MIN_STORAGE_BYTES
         internal val MAX_DOCUMENTS     = AppConfig.MAX_DOCUMENTS
         internal val MAX_PAGES         = AppConfig.MAX_PAGES
-        private val DATE_FORMAT        = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
     }
 
     suspend fun createDocument(bitmap: Bitmap): Document {
@@ -56,5 +55,16 @@ class SaveDocumentUseCase(
         if (count >= MAX_PAGES) throw PageLimitException(documentId)
     }
 
-    internal fun buildDocumentName(): String = "Document ${DATE_FORMAT.format(Date())}"
+    internal fun buildDocumentName(): String {
+        val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+        return "Document ${fmt.format(Date())}"
+    }
+
+    suspend fun addPages(documentId: String, bitmaps: List<Bitmap>): List<Page> {
+        if (bitmaps.isEmpty()) return emptyList()
+        validateStorage()
+        val currentCount = repository.getPageCount(documentId)
+        if (currentCount + bitmaps.size > MAX_PAGES) throw PageLimitException(documentId)
+        return repository.addPages(documentId, bitmaps)
+    }
 }

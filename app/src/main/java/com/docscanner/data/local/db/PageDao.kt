@@ -20,6 +20,9 @@ interface PageDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertPage(page: PageEntity)
 
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertPages(pages: List<PageEntity>)
+
     @Update
     suspend fun updatePage(page: PageEntity)
 

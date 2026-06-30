@@ -6,6 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docscanner.common.AppConfig
+import com.docscanner.common.calcInSampleSize
 import com.docscanner.data.repository.DocumentRepository
 import com.docscanner.domain.model.Page
 import kotlinx.coroutines.Dispatchers
@@ -78,8 +79,18 @@ class EditViewModel(
             runCatching {
                 val pages = repository.getPagesForDocument(documentId)
                 val page = pages.getOrNull(pageIndex) ?: error("Page $pageIndex not found")
-                val bitmap = withContext(Dispatchers.IO) {
-                    BitmapFactory.decodeFile(page.imagePath)
+                val bitmap = withContext(Dispatchers.Default) {
+                    val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeFile(page.imagePath, opts)
+                    if (opts.outWidth <= 0) null
+                    else {
+                        opts.inSampleSize = calcInSampleSize(
+                            opts.outWidth, opts.outHeight,
+                            AppConfig.IMAGE_MAX_WIDTH, AppConfig.IMAGE_MAX_HEIGHT
+                        )
+                        opts.inJustDecodeBounds = false
+                        BitmapFactory.decodeFile(page.imagePath, opts)
+                    }
                 } ?: error("Failed to decode page image")
                 page to bitmap
             }.onSuccess { (page, bitmap) ->
@@ -89,11 +100,6 @@ class EditViewModel(
                 _uiState.update { it.copy(isProcessing = false, errorMessage = "Failed to load page.") }
             }
         }
-    }
-
-    fun loadPage(page: Page, initialBitmap: Bitmap) {
-        currentPage = page
-        _uiState.update { it.copy(currentBitmap = initialBitmap, hasUnsavedChanges = false, canUndo = false) }
     }
 
     fun rotate() = applyTransform { bitmap -> ImageProcessor.rotateBitmap(bitmap) }
@@ -170,6 +176,7 @@ class EditViewModel(
                     _uiState.update {
                         it.copy(currentBitmap = newBitmap, isProcessing = false, hasUnsavedChanges = true, canUndo = true)
                     }
+                    current.recycle()
                 }.onFailure {
                     _uiState.update { it.copy(isProcessing = false, errorMessage = "Processing failed.") }
                 }

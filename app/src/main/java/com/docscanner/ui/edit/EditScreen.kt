@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.Image
+import com.docscanner.common.AppConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -156,7 +157,7 @@ fun EditScreen(
                             brightnessValue = it
                             viewModel.adjustBrightness(it)
                         },
-                        valueRange = -255f..255f,
+                        valueRange = AppConfig.EDIT_BRIGHTNESS_MIN..AppConfig.EDIT_BRIGHTNESS_MAX,
                         enabled = !uiState.isProcessing
                     )
                 }
@@ -170,7 +171,7 @@ fun EditScreen(
                             contrastValue = it
                             viewModel.adjustContrast(it)
                         },
-                        valueRange = 0f..2f,
+                        valueRange = AppConfig.EDIT_CONTRAST_MIN..AppConfig.EDIT_CONTRAST_MAX,
                         enabled = !uiState.isProcessing
                     )
                 }

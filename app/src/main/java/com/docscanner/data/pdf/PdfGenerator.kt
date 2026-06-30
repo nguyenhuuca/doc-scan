@@ -35,7 +35,7 @@ class PdfGenerator(private val cacheDir: File) {
                     JpegPage(path, opts.outWidth, opts.outHeight)
                 else null
             }
-            val exportDir = File(cacheDir, "export").also { it.mkdirs() }
+            val exportDir = File(cacheDir, AppConfig.EXPORT_CACHE_DIR).also { it.mkdirs() }
             val outputFile = File(exportDir, "export_${System.currentTimeMillis()}.pdf")
             FileOutputStream(outputFile).use { writePdf(CountingOutputStream(it), pages) }
             outputFile

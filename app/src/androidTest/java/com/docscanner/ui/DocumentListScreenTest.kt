@@ -36,6 +36,8 @@ class DocumentListScreenTest {
         override suspend fun getDocumentById(id: String): Document? = null
         override suspend fun createDocument(n: String, b: Bitmap): Document = Document("d", n, 0L, 0L, 1, null)
         override suspend fun addPage(id: String, b: Bitmap): Page = Page("p", id, 1, "/p.jpg", 0L)
+        override suspend fun addPages(id: String, bitmaps: List<Bitmap>): List<Page> =
+            bitmaps.mapIndexed { i, _ -> Page("p$i", id, i + 1, "/p$i.jpg", 0L) }
         override suspend fun updatePage(id: String, p: Page, b: Bitmap): Page = p
         override suspend fun reorderPages(id: String, pages: List<Page>) {}
         override suspend fun deleteDocument(id: String) {}

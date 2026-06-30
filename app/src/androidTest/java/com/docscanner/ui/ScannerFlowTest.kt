@@ -98,6 +98,8 @@ class ScannerFlowTest {
         override suspend fun addPage(documentId: String, bitmap: Bitmap): Page {
             addedDocumentId = documentId; return Page("p", documentId, 1, "/p", 0L)
         }
+        override suspend fun addPages(documentId: String, bitmaps: List<Bitmap>): List<Page> =
+            bitmaps.mapIndexed { i, _ -> Page("p$i", documentId, i + 1, "/p$i", 0L) }
         override suspend fun updatePage(id: String, page: Page, bitmap: Bitmap): Page = page
         override suspend fun reorderPages(id: String, pages: List<Page>) {}
         override suspend fun deleteDocument(id: String) {}

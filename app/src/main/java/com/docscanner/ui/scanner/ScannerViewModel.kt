@@ -57,19 +57,16 @@ class ScannerViewModel(
     }
 
     fun onScanSuccess(imageUris: List<Uri>, context: Context) {
-        // Read URI bytes on the CALLING (main) thread immediately.
-        // ML Kit content:// URIs carry FLAG_GRANT_READ_URI_PERMISSION tied to the
-        // activity-result delivery window. By the time a Dispatchers.IO coroutine
-        // runs, the grant may already be revoked.
-        val rawBytes: List<ByteArray> = imageUris.mapNotNull { uri ->
-            runCatching {
-                context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-            }.getOrNull()
-        }
-
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessing = true) }
             runCatching {
+                val rawBytes = withContext(Dispatchers.IO) {
+                    imageUris.mapNotNull { uri ->
+                        runCatching {
+                            context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                        }.getOrNull()
+                    }
+                }
                 if (rawBytes.isEmpty()) error("Could not read scanned images from scanner")
 
                 val bitmaps = withContext(Dispatchers.Default) {
@@ -85,14 +82,10 @@ class ScannerViewModel(
 
                 if (documentId == "new") {
                     val doc = saveDocumentUseCase.createDocument(bitmaps.first())
-                    bitmaps.drop(1).forEach { bitmap ->
-                        saveDocumentUseCase.addPage(doc.id, bitmap)
-                    }
+                    if (bitmaps.size > 1) saveDocumentUseCase.addPages(doc.id, bitmaps.drop(1))
                     doc.id
                 } else {
-                    bitmaps.forEach { bitmap ->
-                        saveDocumentUseCase.addPage(documentId, bitmap)
-                    }
+                    saveDocumentUseCase.addPages(documentId, bitmaps)
                     documentId
                 }
             }.onSuccess { docId ->

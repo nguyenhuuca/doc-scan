@@ -32,12 +32,11 @@ object ImageProcessor {
     suspend fun adjustContrast(bitmap: Bitmap, contrast: Float): Bitmap =
         withContext(Dispatchers.Default) {
             // contrast: 0f to 2f; 1 = no change
-            val scale = contrast
-            val translate = (-.5f * scale + .5f) * 255f
+            val translate = (-.5f * contrast + .5f) * 255f
             val colorMatrix = ColorMatrix(floatArrayOf(
-                scale, 0f, 0f, 0f, translate,
-                0f, scale, 0f, 0f, translate,
-                0f, 0f, scale, 0f, translate,
+                contrast, 0f, 0f, 0f, translate,
+                0f, contrast, 0f, 0f, translate,
+                0f, 0f, contrast, 0f, translate,
                 0f, 0f, 0f, 1f, 0f
             ))
             applyColorMatrix(bitmap, colorMatrix)

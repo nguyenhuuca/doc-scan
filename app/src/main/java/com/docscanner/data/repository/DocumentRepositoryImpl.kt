@@ -86,6 +86,33 @@ class DocumentRepositoryImpl(
         return pageEntity.toDomain()
     }
 
+    override suspend fun addPages(documentId: String, bitmaps: List<Bitmap>): List<Page> {
+        if (bitmaps.isEmpty()) return emptyList()
+        val now = System.currentTimeMillis()
+        val currentPages = pageDao.getPagesByDocumentIdSync(documentId)
+        val startPageNumber = (currentPages.maxOfOrNull { it.pageNumber } ?: 0) + 1
+
+        val pageEntities = bitmaps.mapIndexed { index, bitmap ->
+            val pageNumber = startPageNumber + index
+            val imagePath = imageStorage.savePageImage(documentId, pageNumber, bitmap, now)
+            PageEntity(
+                id = UUID.randomUUID().toString(),
+                documentId = documentId,
+                pageNumber = pageNumber,
+                imagePath = imagePath,
+                createdAt = now
+            )
+        }
+
+        val newPageCount = currentPages.size + bitmaps.size
+        val existingThumb = documentDao.getDocumentById(documentId)?.thumbnailPath
+        database.withTransaction {
+            pageDao.insertPages(pageEntities)
+            documentDao.updateDocumentMeta(documentId, newPageCount, now, existingThumb)
+        }
+        return pageEntities.map { it.toDomain() }
+    }
+
     override suspend fun updatePage(documentId: String, page: Page, newBitmap: Bitmap): Page {
         val now = System.currentTimeMillis()
         val newImagePath = imageStorage.updatePageImage(documentId, page.pageNumber, newBitmap, page.imagePath, now)

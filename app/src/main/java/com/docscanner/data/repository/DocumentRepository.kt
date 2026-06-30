@@ -11,6 +11,7 @@ interface DocumentRepository {
     suspend fun getDocumentById(documentId: String): Document?
     suspend fun createDocument(name: String, firstPageBitmap: Bitmap): Document
     suspend fun addPage(documentId: String, bitmap: Bitmap): Page
+    suspend fun addPages(documentId: String, bitmaps: List<Bitmap>): List<Page>
     suspend fun updatePage(documentId: String, page: Page, newBitmap: Bitmap): Page
     suspend fun reorderPages(documentId: String, reorderedPages: List<Page>)
     suspend fun deleteDocument(documentId: String)
