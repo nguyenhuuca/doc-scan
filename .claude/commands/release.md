@@ -58,11 +58,13 @@ Get changes from:
 ```bash
 git log $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD \
   --no-merges --pretty='%s' \
-  | grep -v '^chore:' | grep -v '^docs:' | grep -v '^ci:'
+  | grep -v '^chore:' | grep -v '^docs:' | grep -v '^ci:' \
+  | grep -v '^test:' | grep -iv 'unit.test\|coverage\|jacoco'
 ```
 
 Translate commit messages to user-facing Vietnamese bullet points.
-Skip pure CI/chore/docs commits.
+Skip pure CI/chore/docs/test commits.
+**Never include testing, unit test, or coverage content in the changelog.**
 
 ### 6. Run quality gate
 
@@ -106,6 +108,7 @@ Report the run URL so the user can monitor CI.
 - NEVER bump version if working tree is dirty
 - NEVER hardcode version — always use `$ARGUMENTS`
 - ALWAYS translate commits to user-facing Vietnamese for the YAML changelog
+- NEVER include testing, unit test, or coverage changes in the changelog — users don't care about internal quality work
 - ALWAYS use Edit tool (not sed/awk) to modify files
 
 ## Example invocation
