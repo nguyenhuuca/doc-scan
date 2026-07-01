@@ -34,6 +34,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            enableUnitTestCoverage = true
+        }
         release {
             isMinifyEnabled = true
             if (hasSigningConfig) {
@@ -63,6 +66,7 @@ android {
     testOptions {
         unitTests {
             isReturnDefaultValues = true
+            isIncludeAndroidResources = false
             all { test ->
                 test.jvmArgs(
                     "--add-opens", "java.base/java.lang=ALL-UNNAMED",
@@ -128,4 +132,54 @@ dependencies {
     androidTestImplementation(libs.androidx.room.testing)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+}
+
+// ── JaCoCo custom coverage report with exclusions ────────────────────────────
+// AGP's createDebugUnitTestCoverageReport uses an internal JacocoReportTask that
+// doesn't support classDirectories filtering. We create a standard JacocoReport
+// task that reads the same .exec file and applies exclusions, so the percentage
+// reflects only the code that can meaningfully be tested in JVM unit tests.
+//
+// Excluded: UI (Compose screens/VMs/theme), Room DAOs + generated impls,
+//           filesystem/PDF data layer, DI wiring, Android entry points, entities.
+// Included: domain/usecase, domain/model, common (pure logic).
+apply(plugin = "jacoco")
+
+val jacocoExclusions = listOf(
+    "**/ui/**",
+    "**/data/local/db/**",
+    "**/*_Impl*",
+    "**/data/local/filesystem/**",
+    "**/data/pdf/**",
+    "**/data/repository/DocumentRepositoryImpl*",
+    "**/di/**",
+    "**/MainActivity*",
+    "**/MyApplication*",
+    "**/data/local/entity/**",
+)
+
+tasks.register<JacocoReport>("coverageReport") {
+    group = "verification"
+    description = "Unit-test coverage — excludes UI, Room, DI, and Android entry points."
+    dependsOn("testDebugUnitTest")
+
+    reports {
+        xml.required.set(false)
+        html.required.set(true)
+        html.outputLocation.set(layout.buildDirectory.dir("reports/coverage/filtered"))
+    }
+
+    executionData.setFrom(
+        fileTree(layout.buildDirectory) {
+            include("outputs/unit_test_code_coverage/debugUnitTest/*.exec")
+        }
+    )
+
+    sourceDirectories.setFrom(files("src/main/java", "src/main/kotlin"))
+
+    classDirectories.setFrom(
+        fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) {
+            exclude(jacocoExclusions)
+        }
+    )
 }
