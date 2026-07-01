@@ -55,6 +55,10 @@ class SaveDocumentUseCase(
         if (count >= MAX_PAGES) throw PageLimitException(documentId)
     }
 
+    internal fun validateBatchPageCount(currentCount: Int, batchSize: Int, documentId: String) {
+        if (currentCount + batchSize > MAX_PAGES) throw PageLimitException(documentId)
+    }
+
     internal fun buildDocumentName(): String {
         val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
         return "Document ${fmt.format(Date())}"
@@ -64,7 +68,7 @@ class SaveDocumentUseCase(
         if (bitmaps.isEmpty()) return emptyList()
         validateStorage()
         val currentCount = repository.getPageCount(documentId)
-        if (currentCount + bitmaps.size > MAX_PAGES) throw PageLimitException(documentId)
+        validateBatchPageCount(currentCount, bitmaps.size, documentId)
         return repository.addPages(documentId, bitmaps)
     }
 }

@@ -19,9 +19,20 @@ class PdfGenerator(private val cacheDir: File) {
     companion object {
         private val PAGE_WIDTH_PT  = AppConfig.PDF_PAGE_WIDTH_PT
         private val PAGE_HEIGHT_PT = AppConfig.PDF_PAGE_HEIGHT_PT
-        private val MARGIN_PT      = AppConfig.PDF_MARGIN_PT
-        private val DRAWABLE_W     = PAGE_WIDTH_PT  - 2 * MARGIN_PT
-        private val DRAWABLE_H     = PAGE_HEIGHT_PT - 2 * MARGIN_PT
+        internal val MARGIN_PT     = AppConfig.PDF_MARGIN_PT
+        internal val DRAWABLE_W    = PAGE_WIDTH_PT  - 2 * MARGIN_PT
+        internal val DRAWABLE_H    = PAGE_HEIGHT_PT - 2 * MARGIN_PT
+
+        internal data class ImagePlacement(val imgW: Int, val imgH: Int, val x: Int, val y: Int)
+
+        internal fun computePlacement(pageW: Int, pageH: Int): ImagePlacement {
+            val scale = minOf(DRAWABLE_W.toFloat() / pageW, DRAWABLE_H.toFloat() / pageH)
+            val imgW  = (pageW * scale).toInt()
+            val imgH  = (pageH * scale).toInt()
+            val x     = MARGIN_PT + (DRAWABLE_W - imgW) / 2
+            val y     = MARGIN_PT + (DRAWABLE_H - imgH) / 2
+            return ImagePlacement(imgW, imgH, x, y)
+        }
     }
 
     private data class JpegPage(val path: String, val width: Int, val height: Int)
@@ -66,12 +77,7 @@ class PdfGenerator(private val cacheDir: File) {
             val imgObj  = 5 + i * 3
             val imgName = "Im${i + 1}"
 
-            // Scale to fit drawable area while preserving aspect ratio
-            val scale = minOf(DRAWABLE_W.toFloat() / page.width, DRAWABLE_H.toFloat() / page.height)
-            val imgW  = (page.width  * scale).toInt()
-            val imgH  = (page.height * scale).toInt()
-            val x     = MARGIN_PT + (DRAWABLE_W - imgW) / 2
-            val y     = MARGIN_PT + (DRAWABLE_H - imgH) / 2
+            val (imgW, imgH, x, y) = computePlacement(page.width, page.height)
 
             val content = "q $imgW 0 0 $imgH $x $y cm /$imgName Do Q\n"
                 .toByteArray(Charsets.US_ASCII)
