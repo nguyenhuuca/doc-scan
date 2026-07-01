@@ -30,6 +30,17 @@ jobs:
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest --no-daemon
 
+      - name: Check translation completeness (EN/VI)
+        run: |
+          ./gradlew lintDebug --no-daemon || true
+          REPORT="app/build/reports/lint-results-debug.txt"
+          if [ -f "$REPORT" ] && grep -qE "MissingTranslation|ExtraTranslation" "$REPORT"; then
+            echo "Translation completeness check failed — values/ and values-vi/strings.xml are out of sync:"
+            grep -E "MissingTranslation|ExtraTranslation" "$REPORT"
+            exit 1
+          fi
+          echo "Translation completeness check passed."
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
