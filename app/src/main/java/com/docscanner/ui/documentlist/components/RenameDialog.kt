@@ -13,7 +13,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.docscanner.R
 
 @Composable
 fun RenameDialog(
@@ -25,20 +27,23 @@ fun RenameDialog(
     var error by remember { mutableStateOf<String?>(null) }
 
     val forbiddenChars = Regex("""[/\\:*?"<>|]""")
+    val emptyError = stringResource(R.string.name_empty_error)
+    val tooLongError = stringResource(R.string.name_too_long_error)
+    val invalidCharsError = stringResource(R.string.name_invalid_chars_error)
 
     fun validate(value: String): String? {
         val trimmed = value.trim()
         return when {
-            trimmed.isEmpty() -> "Name cannot be empty."
-            trimmed.length > 50 -> "Name must be 50 characters or fewer."
-            forbiddenChars.containsMatchIn(trimmed) -> "Name contains invalid characters."
+            trimmed.isEmpty() -> emptyError
+            trimmed.length > 50 -> tooLongError
+            forbiddenChars.containsMatchIn(trimmed) -> invalidCharsError
             else -> null
         }
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Rename Document") },
+        title = { Text(stringResource(R.string.rename_document)) },
         text = {
             Column {
                 OutlinedTextField(
@@ -47,7 +52,7 @@ fun RenameDialog(
                         text = it
                         error = validate(it)
                     },
-                    label = { Text("Document name") },
+                    label = { Text(stringResource(R.string.document_name_label)) },
                     isError = error != null,
                     supportingText = error?.let { msg -> { Text(msg) } },
                     singleLine = true
@@ -65,10 +70,10 @@ fun RenameDialog(
                         onConfirm(trimmed)
                     }
                 }
-            ) { Text("Rename") }
+            ) { Text(stringResource(R.string.rename)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         }
     )
 }

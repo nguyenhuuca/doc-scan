@@ -91,7 +91,7 @@ fun DocumentListScreen(
                 putExtra(Intent.EXTRA_STREAM, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            context.startActivity(Intent.createChooser(intent, "Share PDF"))
+            context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_pdf)))
             viewModel.clearExportedFile()
         }
     }
@@ -99,10 +99,10 @@ fun DocumentListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Doc Scanner") },
+                title = { Text(stringResource(R.string.app_name)) },
                 actions = {
                     IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings))
                     }
                 }
             )
@@ -146,9 +146,9 @@ fun DocumentListScreen(
                 uiState.totalDocumentCount == 0 && !uiState.isLoading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("No documents yet", style = MaterialTheme.typography.titleLarge)
+                            Text(stringResource(R.string.no_documents_yet), style = MaterialTheme.typography.titleLarge)
                             Text(
-                                "Tap + to scan your first document",
+                                stringResource(R.string.tap_to_scan_hint),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -158,7 +158,7 @@ fun DocumentListScreen(
                 uiState.documents.isEmpty() && uiState.totalDocumentCount > 0 -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
-                            "No results for \"${uiState.searchQuery}\"",
+                            stringResource(R.string.no_results_for_query, uiState.searchQuery),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -187,21 +187,21 @@ fun DocumentListScreen(
                                         onDismissRequest = { documentForContextMenu = null }
                                     ) {
                                         DropdownMenuItem(
-                                            text = { Text("Rename") },
+                                            text = { Text(stringResource(R.string.rename)) },
                                             onClick = {
                                                 showRenameDialog = true
                                                 documentForContextMenu = null
                                             }
                                         )
                                         DropdownMenuItem(
-                                            text = { Text("Export PDF") },
+                                            text = { Text(stringResource(R.string.export_pdf)) },
                                             onClick = {
                                                 selectedDocument?.let { viewModel.exportPdf(it.id) }
                                                 documentForContextMenu = null
                                             }
                                         )
                                         DropdownMenuItem(
-                                            text = { Text("Delete") },
+                                            text = { Text(stringResource(R.string.delete)) },
                                             onClick = {
                                                 showDeleteDialog = true
                                                 documentForContextMenu = null
@@ -258,12 +258,12 @@ private fun SearchAndSortBar(
         OutlinedTextField(
             value = query,
             onValueChange = onQueryChange,
-            placeholder = { Text("Search documents...") },
+            placeholder = { Text(stringResource(R.string.search_documents_placeholder)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             trailingIcon = {
                 if (query.isNotEmpty()) {
                     IconButton(onClick = { onQueryChange("") }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                        Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear_search))
                     }
                 }
             },
@@ -274,7 +274,7 @@ private fun SearchAndSortBar(
         IconButton(onClick = onSortToggle) {
             Icon(
                 imageVector = if (sortOrder == SortOrder.DATE_DESC) Icons.Default.Schedule else Icons.Default.SortByAlpha,
-                contentDescription = if (sortOrder == SortOrder.DATE_DESC) "Sort by name" else "Sort by date"
+                contentDescription = stringResource(if (sortOrder == SortOrder.DATE_DESC) R.string.sort_by_name else R.string.sort_by_date)
             )
         }
     }

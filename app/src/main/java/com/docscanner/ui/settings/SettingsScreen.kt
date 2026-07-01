@@ -38,6 +38,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,10 +62,10 @@ fun SettingsScreen(onNavigateBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -90,12 +91,12 @@ fun SettingsScreen(onNavigateBack: () -> Unit) {
                     )
                 }
                 Spacer(modifier = Modifier.height(24.dp))
-                SettingsRow(label = "App Version", value = BuildConfig.VERSION_NAME)
-                SettingsRow(label = "Documents", value = "$documentCount / 100")
-                SettingsRow(label = "Storage Used", value = formatBytes(storageUsedBytes))
+                SettingsRow(label = stringResource(R.string.app_version_label), value = BuildConfig.VERSION_NAME)
+                SettingsRow(label = stringResource(R.string.documents_label), value = "$documentCount / 100")
+                SettingsRow(label = stringResource(R.string.storage_used_label), value = formatBytes(storageUsedBytes))
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "Có gì mới",
+                    text = stringResource(R.string.whats_new_title),
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -123,9 +124,9 @@ private fun calculateStorageUsed(dir: File): Long {
 }
 
 private fun formatBytes(bytes: Long): String = when {
-    bytes >= 1024L * 1024 * 1024 -> "%.1f GB".format(bytes / (1024.0 * 1024 * 1024))
-    bytes >= 1024L * 1024 -> "%.1f MB".format(bytes / (1024.0 * 1024))
-    bytes >= 1024L -> "%.1f KB".format(bytes / 1024.0)
+    bytes >= 1024L * 1024 * 1024 -> String.format(Locale.US, "%.1f GB", bytes / (1024.0 * 1024 * 1024))
+    bytes >= 1024L * 1024 -> String.format(Locale.US, "%.1f MB", bytes / (1024.0 * 1024))
+    bytes >= 1024L -> String.format(Locale.US, "%.1f KB", bytes / 1024.0)
     else -> "$bytes B"
 }
 
