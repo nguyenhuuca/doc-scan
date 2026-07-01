@@ -12,9 +12,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.docscanner.R
 import com.docscanner.domain.model.Document
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -46,7 +48,7 @@ fun DocumentCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "${document.pageCount} page${if (document.pageCount != 1) "s" else ""}",
+                    text = pluralStringResource(R.plurals.page_count, document.pageCount, document.pageCount),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -81,4 +81,9 @@
     <string name="documents_label">Tài liệu</string>
     <string name="storage_used_label">Dung lượng đã dùng</string>
     <string name="whats_new_title">Có gì mới</string>
+
+    <!-- Document Card -->
+    <plurals name="page_count">
+        <item quantity="other">%d trang</item>
+    </plurals>
 </resources>

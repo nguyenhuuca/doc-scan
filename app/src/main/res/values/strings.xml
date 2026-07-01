@@ -81,4 +81,10 @@
     <string name="documents_label">Documents</string>
     <string name="storage_used_label">Storage Used</string>
     <string name="whats_new_title">What\'s New</string>
+
+    <!-- Document Card -->
+    <plurals name="page_count">
+        <item quantity="one">%d page</item>
+        <item quantity="other">%d pages</item>
+    </plurals>
 </resources>
