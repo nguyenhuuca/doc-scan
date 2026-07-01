@@ -1,3 +1,11 @@
+- version: "1.5.0"
+  date: "01/07/2026"
+  changes:
+    - "Hỗ trợ đầy đủ tiếng Việt cho toàn bộ ứng dụng — có thể chuyển đổi Anh/Việt ngay trong Cài đặt, độc lập với ngôn ngữ máy"
+    - "Cải thiện hiệu năng khi thêm nhiều trang cùng lúc — xử lý theo lô thay vì từng trang một"
+    - "Giảm nguy cơ giật/treo khi chỉnh sửa ảnh có độ phân giải cao"
+    - "Sửa lỗi hiển thị trạng thái trang bị thiếu trên màn hình xem tài liệu"
+
 - version: "1.4.0"
   date: "29/06/2026"
   changes:
