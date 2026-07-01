@@ -9,10 +9,10 @@ Related PRD: docs/prd/PRD-android-document-scanner.md
 
 ## Metadata
 
-**Status:** Proposed · **Date:** 2026-07-01 · **Deciders:** nguyenhuuca@gmail.com · **Tags:** i18n, l10n, compose, resources
+**Status:** Accepted · **Date:** 2026-07-01 · **Deciders:** nguyenhuuca@gmail.com · **Tags:** i18n, l10n, compose, resources
 **Related PRD:** [PRD-android-document-scanner](../prd/PRD-android-document-scanner.md) — resolves open question: *"Should the UI support multiple languages (EN + VI) in v1?"* · **Supersedes:** N/A · **Superseded By:** N/A
 
-**Tech Strategy:** ✅ Aligned for the v1 decision (zero new dependencies). ⚠️ Conditional deviation flagged for the v1.1 fast-follow option (adds `androidx.appcompat`) — see Decision B.
+**Tech Strategy:** ✅ Aligned — final implementation has zero new dependencies. (An earlier pass added `androidx.appcompat` for Decision B3; it was found non-functional on-device and removed before merge — see Decision B.)
 
 ---
 
@@ -102,9 +102,22 @@ Add `androidx.appcompat:appcompat` and a manifest meta-data flag; AppCompat's `A
 | ~10 lines of app code vs. B2's two hand-written code paths; Google-maintained and battle-tested across API 26+ uniformly | **New dependency** — violates tech-strategy's "prefer zero new dependencies" default |
 | Works with the existing `ComponentActivity`/Compose setup without theme changes | Modest APK size increase (~1–2 MB; largely offset by already-present `androidx.activity`/`androidx.fragment` transitive deps) |
 
-### Decision: **B1 now (v1)**; **B3 recommended as a fast-follow (v1.1)**; **B2 rejected**
+**Attempted and rejected — confirmed broken in practice, not just in theory.** B3 was implemented first (added `androidx.appcompat:appcompat:1.7.0`, the `AppLocalesMetadataHolderService` + `autoStoreLocales` meta-data, and a `Settings → Language` picker calling `AppCompatDelegate.setApplicationLocales()`). On-device testing (Galaxy S21 FE, API 35) showed the call **silently no-ops**: `AppCompatDelegate.getApplicationLocales()` read back empty immediately after `setApplicationLocales()`, with no exception anywhere in logcat. Calling the equivalent raw platform API (`context.getSystemService(LocaleManager::class.java).applicationLocales = ...`) in the same click handler worked immediately and correctly. Root cause: AppCompat's 33+ code path resolves an `Application`/`Activity` context internally via a hidden-API lookup that depends on `AppCompatActivity`'s lifecycle registration (or the `autoStoreLocales` shim registering equivalent callbacks) — on a plain `ComponentActivity` app this resolution silently fails rather than throwing. This is a real gap between AppCompat's documented "works without AppCompatActivity" claim and observed behavior, not a configuration mistake on this app's part (manifest merge was verified correct). **The `androidx.appcompat` dependency was removed entirely** once B4 (below) proved to work with zero dependencies.
 
-**Rationale:** The immediate PRD question is "should the UI support EN + VI," not "must users be able to override device language." B1 answers that question completely with zero code and zero dependency risk, and is the correct v1 scope. B2 is rejected outright — it trades a small, well-tested dependency (B3) for two custom, hand-maintained locale-shim code paths, which is a worse simplicity/risk trade for a solo developer. If user feedback later shows demand for an in-app language switch independent of device locale (e.g. Settings → Language row), B3 is the recommended path — file a new ADR referencing this section rather than re-deriving the trade-off.
+### Option B4 (adopted): Direct platform `LocaleManager` (API 33+) + `Configuration`/`attachBaseContext` shim (API 26–32) — no dependency
+
+Functionally the same runtime behavior as B2, but built and verified after B3's failure made B2's original "why hand-roll this" objection moot — there was no working zero-maintenance alternative. A small `common/AppLanguage.kt` object wraps:
+- **API 33+:** `context.getSystemService(LocaleManager::class.java).applicationLocales` directly — confirmed working via on-device testing; the OS persists the choice and recreates activities automatically.
+- **API 26–32:** the tag is persisted in `SharedPreferences` and applied via `Configuration.setLocale()` in `MyApplication.attachBaseContext()` and `MainActivity.attachBaseContext()`; the caller (`Settings` screen) calls `Activity.recreate()` after changing it, since no OS-level recreate mechanism exists below API 33.
+
+| Pros | Cons |
+|------|------|
+| Zero new dependency; confirmed working on real hardware (not just API docs) | Two code paths (33+ vs. <33) to maintain, same as B2's original objection |
+| No reliance on a third-party library's undocumented internal context resolution | The <33 path is untested on a physical device below API 33 in this pass (see Validation) |
+
+### Decision: **B1 (system-locale fallback) + B4 (in-app switcher), both shipped in v1**; **B3 rejected with evidence**; **B2 superseded by B4**
+
+**Rationale:** The original plan was B1-only for v1 with B3 as a v1.1 fast-follow. The user asked for the in-app switcher immediately, which surfaced B3's failure through real device testing rather than living undetected until a future release. Given B3 doesn't actually work as documented on this app's Activity shape, and B4 does — confirmed on hardware — B4 is strictly better than the original B2/B3 choice set: it has B3's zero-dependency property (better, even, since B3 turned out to need a dependency that didn't help) without B3's hidden failure mode. The two-code-path maintenance cost (B2's original objection) is accepted since it's the only verified-working option for API 26–32.
 
 ---
 
@@ -131,8 +144,8 @@ Android Lint ships with `MissingTranslation` and `ExtraTranslation` checks, enab
 | Decision | Outcome | New dependency? |
 |----------|---------|------------------|
 | A — String externalization | A1: extract all ~48 literals now, single refactor commit | No |
-| B — Locale switching | B1 now (system-locale-only); B3 (`AppCompatDelegate`) as documented v1.1 fast-follow; B2 rejected | No (v1) / Yes, `androidx.appcompat` (v1.1, if pursued) |
-| C1 — Release notes | English-only, unchanged | No |
+| B — Locale switching | B1 (system-locale fallback) + B4 (in-app `Settings → Language` switcher, direct `LocaleManager` + `Configuration` shim), both shipped in v1; B3 (`AppCompatDelegate`) tried and rejected with on-device evidence; B2 superseded by B4 | No |
+| C1 — Release notes | English-only, unchanged — **note:** on-device QA found `release_notes.yaml`'s actual content is hardcoded Vietnamese, contradicting the "English by convention" assumption; not fixed here, flagged as a follow-up | No |
 | C2 — Numeric formatting | Force `Locale.US` at the 2 affected call sites | No |
 | D — Regression prevention | Rely on default Android Lint `MissingTranslation`/`ExtraTranslation`, add `lintDebug` to CI gate | No |
 
@@ -160,10 +173,10 @@ Non-resource content (unaffected by locale):
 
 | Concern | Decision | APK Impact | Effort |
 |---------|----------|------------|--------|
-| String extraction | A1 | 0 MB | ~48 call sites across 8 files, 1 refactor commit |
-| New `values-vi/strings.xml` | — | < 10 KB | Translation of ~70 total strings (21 existing + 48 extracted) |
-| Locale switching | B1 | 0 MB | 0 — OS handles it |
-| Locale switching (deferred) | B3, if pursued later | ~1–2 MB | ~10 LOC + manifest meta-data |
+| String extraction | A1 | 0 MB | ~49 call sites across 9 files (incl. a `page_count` plural missed in the initial pass, caught by on-device QA), 1 refactor commit |
+| New `values-vi/strings.xml` | — | < 10 KB | Translation of ~74 total strings/plurals |
+| Locale switching | B1 + B4 | 0 MB | `common/AppLanguage.kt` (~45 LOC) + `attachBaseContext` overrides in `MyApplication`/`MainActivity` + Settings UI (~25 LOC) |
+| Locale switching, rejected | B3 (attempted, reverted) | +0 MB net (added then removed `androidx.appcompat`) | ~30 LOC written and removed; confirmed non-functional on real hardware before commit |
 | Lint gate | D | 0 MB | Add `lintDebug` to CI workflow |
 
 ---
@@ -171,32 +184,35 @@ Non-resource content (unaffected by locale):
 ## Consequences
 
 **Positive:**
-- Resolves the open PRD question directly: v1 ships with full English + Vietnamese UI coverage.
-- Zero new dependencies, zero new runtime code paths — matches the project's manual-DI, minimal-dependency philosophy.
+- Resolves the open PRD question directly: v1 ships with full English + Vietnamese UI coverage, plus an in-app switcher independent of device locale.
+- Zero new dependencies in the final state — B4 achieves what B3 promised (in-app switching) without the dependency B3 needed and without B3's hidden failure mode.
 - Lint's built-in translation-completeness checks make future string additions self-enforcing once `values-vi/` exists.
-- Sets a documented, low-risk upgrade path (B3) if in-app language override is requested later, without re-litigating the AppCompat trade-off.
+- The B3 failure was caught by on-device testing *before* merging, not discovered later by a user — validates doing real-device QA rather than trusting library documentation alone for platform-integration features.
 
 **Negative:**
-- A1 is a one-time large-ish diff (8 files) — must be reviewed carefully for missed literals and for any test that asserts on hardcoded English text.
-- Under B1, a user whose device is in a third language always sees English; this is an accepted v1 limitation, not a bug.
-- `release_notes.yaml` stays English-only, so Vietnamese users see an English "What's New" section — an accepted, explicit trade-off (Decision C1), not an oversight.
+- A1 is a one-time large-ish diff (9 files) — must be reviewed carefully for missed literals and for any test that asserts on hardcoded English text. One instance (`DocumentCard`'s page-count plural) was missed in the initial pass and only caught once a real scanned document existed to render it — the empty-state screens don't exercise this code path.
+- `release_notes.yaml` stays English-only in *decision*, but its actual content today is already hardcoded Vietnamese — an accepted pre-existing inconsistency (Decision C1), not something this ADR fixes.
+- The API 26–32 code path (`Configuration` override + manual `Activity.recreate()`) is unverified on a physical device in this pass — only the API 33+ (`LocaleManager`) path was confirmed on hardware (API 35).
 
 **Risks:**
 - `EditScreenTest.kt` and `DocumentListScreenTest.kt` currently match Compose nodes by hardcoded literal text (`onNodeWithText("...")`); after A1 these tests still pass against the English default resource, but are now indirectly coupled to `values/strings.xml` — a future contributor changing English copy without noticing the test coupling could break CI. Mitigate by preferring `onNodeWithText(context.getString(R.string.x))` over re-hardcoding the literal in the test.
 - Format-string extraction (e.g. `"Page ${pageIndex + 1}"` → `%1$d`) is mechanical but error-prone (wrong positional index, or a translator reordering `%1$d`/`%2$s` incorrectly in `values-vi/`) — verify each interpolated string manually after translation.
+- B4's API 26–32 shim is unverified on real hardware — if a contributor has access to an API 26–32 device/emulator, confirm `Activity.recreate()` correctly re-applies the wrapped `Configuration` before relying on it in production.
 
 ---
 
 ## Validation
 
-- [ ] All ~48 identified hardcoded literals (see file list in Context) moved to `values/strings.xml`; zero `Text("...")` or `contentDescription = "..."` literals remain in `app/src/main/java/com/docscanner/ui/**`
-- [ ] `values-vi/strings.xml` created with a complete Vietnamese translation of every entry (existing 21 + newly extracted ~48)
-- [ ] `formatBytes()` and the contrast-value formatter explicitly pass `Locale.US`
-- [ ] `./gradlew lintDebug` passes with zero `MissingTranslation` / `ExtraTranslation` warnings
-- [ ] `./gradlew testDebugUnitTest --no-daemon` green after refactor (Two Hats: behavior unchanged)
-- [ ] Manual check: switch emulator language to Vietnamese, verify every screen (DocumentList, Scanner, Edit, Viewer, Settings, dialogs) renders fully in Vietnamese with no English leakage and no truncated/overflowing text (Vietnamese strings run ~15–25% longer than English)
-- [ ] Manual check: switch emulator language to a third locale (e.g. French), confirm correct fallback to English
-- [ ] Tech Strategy alignment confirmed (no new dependency added for v1 scope)
+- [x] All identified hardcoded literals (see file list in Context, plus `DocumentCard`'s page-count plural caught later) moved to `values/strings.xml`; zero `Text("...")` or `contentDescription = "..."` literals remain in `app/src/main/java/com/docscanner/ui/**`
+- [x] `values-vi/strings.xml` created with a complete Vietnamese translation of every entry (74 entries, verified equal count to `values/strings.xml`)
+- [x] `formatBytes()` and the contrast-value formatter explicitly pass `Locale.US`
+- [x] `./gradlew lintDebug` shows zero `MissingTranslation` / `ExtraTranslation` warnings (pre-existing unrelated manifest lint error confirmed unrelated, not introduced by this work)
+- [x] `./gradlew testDebugUnitTest --no-daemon` green after refactor (Two Hats: behavior unchanged)
+- [x] Manual check on real device (Galaxy S21 FE, API 35): Vietnamese locale — every screen (DocumentList empty + populated, Scanner→Viewer with a real scanned document, Viewer menu, Edit, Settings, Rename/Delete/Discard dialogs) renders fully in Vietnamese, no English leakage, no truncation. See `guide/README.md` for screenshots.
+- [x] Manual check: app locale forced to `fr-FR` (no `values-fr/`), confirmed correct fallback to English on List and Settings
+- [x] In-app language switcher (`Settings → Language`) added and verified on-device: switching to Vietnamese/English/System default correctly recreates the UI in the new language and persists via the OS `LocaleManager` (API 33+ confirmed on hardware)
+- [x] Tech Strategy alignment confirmed — final state has zero new dependencies (B3's `androidx.appcompat` was added, found non-functional on-device, and removed before merge)
+- [ ] API 26–32 `Configuration`/`attachBaseContext` shim path (used only below API 33) is unverified on a physical device or emulator in that range — flagged as a follow-up
 
 ---
 
@@ -212,3 +228,4 @@ Non-resource content (unaffected by locale):
 | Date | Author | Change |
 |------|--------|--------|
 | 2026-07-01 | nguyenhuuca@gmail.com | Initial draft — string externalization, locale-switching mechanism (B1 now / B3 deferred), release-notes and numeric-formatting treatment, lint-based regression gate |
+| 2026-07-01 | nguyenhuuca@gmail.com | Amended after implementation: added in-app language switcher to v1 (originally deferred to v1.1). Decision B revised — B3 (`AppCompatDelegate`) implemented, found non-functional on a real device (silent no-op, root-caused to a hidden-API context lookup that depends on `AppCompatActivity` lifecycle registration), and rejected in favor of B4 (direct `LocaleManager` + `Configuration` shim, zero dependencies, confirmed working on hardware). Status moved to Accepted. |

@@ -3,10 +3,10 @@
 Manual on-device QA evidence for [ADR-0003](../docs/adr/0003-multi-language-support-en-vi.md) and
 [the implementation plan](../docs/plans/plan-multi-language-support-en-vi.md).
 
-Captured on a real device (Samsung Galaxy S21 FE, Android 15 / API 35) using
-`adb shell cmd locale set-app-locales com.docscanner --user 0 --locales <locale>`
-to force the app's language independently of the device's system language,
-without adding any in-app language switcher (per ADR-0003 Decision B1).
+Captured on a real device (Samsung Galaxy S21 FE, Android 15 / API 35). Screenshots 1–12 forced the
+locale externally via `adb shell cmd locale set-app-locales com.docscanner --user 0 --locales <locale>`,
+from before the in-app switcher existed. Screenshots 13–14 use the actual in-app
+`Settings → Language` picker added later the same day (ADR-0003 Decision B4).
 
 ## Vietnamese (`vi-VN`)
 
@@ -37,6 +37,18 @@ Confirms the app falls back to English correctly when the forced locale has no m
 | 3 | Document List — empty state | ![Document List fallback to English](images/03-document-list-fallback-en.png) |
 | 4 | Settings | ![Settings fallback to English](images/04-settings-fallback-en.png) |
 
+## In-app language switcher (`Settings → Language`)
+
+Added per user request after the initial system-locale-only v1. Uses the platform `LocaleManager`
+directly (API 33+, confirmed working here) rather than `AppCompatDelegate.setApplicationLocales()`,
+which was tried first and found to silently no-op on this device — see ADR-0003 Decision B3/B4 for
+the full story.
+
+| # | Screen | Screenshot |
+|---|--------|------------|
+| 13 | Settings — Language picker, "System default" selected, device in English | ![Language picker, English](images/13-language-picker-en.png) |
+| 14 | Settings — after tapping "Tiếng Việt", whole app recreated in Vietnamese | ![Language picker, switched to Vietnamese](images/14-language-picker-switched-to-vi.png) |
+
 ## Known gaps (not covered by these screenshots)
 
 - Rename dialog's inline validation errors (empty name / too long / invalid characters) were not
@@ -46,3 +58,6 @@ Confirms the app falls back to English correctly when the forced locale has no m
 - `DocumentCard`'s "updated" date (`SimpleDateFormat("MMM d, yyyy", Locale.getDefault())`) uses
   locale-correct Vietnamese month abbreviations but an English-order date layout (e.g. `Th7 1, 2026`) —
   a separate date-formatting design decision, not fixed here.
+- The language switcher's API 26–32 fallback path (`Configuration` override + `Activity.recreate()`,
+  since `LocaleManager` doesn't exist below API 33) is implemented but not verified on a physical
+  device or emulator in that range — only the API 33+ path was confirmed on hardware.

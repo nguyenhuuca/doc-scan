@@ -80,6 +80,10 @@
     <string name="app_version_label">Phiên bản ứng dụng</string>
     <string name="documents_label">Tài liệu</string>
     <string name="storage_used_label">Dung lượng đã dùng</string>
+    <string name="language_label">Ngôn ngữ</string>
+    <string name="language_system_default">Theo hệ thống</string>
+    <string name="language_english">English</string>
+    <string name="language_vietnamese">Tiếng Việt</string>
     <string name="whats_new_title">Có gì mới</string>
 
     <!-- Document Card -->
