@@ -46,9 +46,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
+import com.docscanner.R
 import com.docscanner.domain.model.Page
 import com.docscanner.ui.viewer.components.MissingPagePlaceholder
 import com.docscanner.ui.viewer.components.ReorderableThumbnailList
@@ -83,6 +85,8 @@ fun DocumentViewerScreen(
     }
 
     val pagerState = rememberPagerState(pageCount = { uiState.pages.size })
+    val documentDefaultName = stringResource(R.string.app_name)
+    val sharePdfLabel = stringResource(R.string.share_pdf)
 
     LaunchedEffect(uiState.documentDeleted) {
         if (uiState.documentDeleted) onNavigateBack()
@@ -103,7 +107,7 @@ fun DocumentViewerScreen(
                 putExtra(Intent.EXTRA_STREAM, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            context.startActivity(Intent.createChooser(intent, "Share PDF"))
+            context.startActivity(Intent.createChooser(intent, sharePdfLabel))
             viewModel.clearExportedFile()
         }
     }
@@ -111,28 +115,28 @@ fun DocumentViewerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(uiState.document?.name ?: "Document") },
+                title = { Text(uiState.document?.name ?: documentDefaultName) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
                     // Per-page three-dot menu
                     Box {
                         IconButton(onClick = { showPageMenu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.more_options))
                         }
                         DropdownMenu(expanded = showPageMenu, onDismissRequest = { showPageMenu = false }) {
                             DropdownMenuItem(
-                                text = { Text("Export PDF") },
+                                text = { Text(stringResource(R.string.export_pdf)) },
                                 onClick = {
                                     viewModel.exportPdf()
                                     showPageMenu = false
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Import from Gallery") },
+                                text = { Text(stringResource(R.string.import_from_gallery)) },
                                 onClick = {
                                     galleryLauncher.launch(
                                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
@@ -144,14 +148,14 @@ fun DocumentViewerScreen(
                             val currentPage = uiState.pages.getOrNull(pagerState.currentPage)
                             if (currentPage != null) {
                                 DropdownMenuItem(
-                                    text = { Text("Edit Page") },
+                                    text = { Text(stringResource(R.string.edit_page_menu)) },
                                     onClick = {
                                         onNavigateToEdit(viewModel.documentId, pagerState.currentPage)
                                         showPageMenu = false
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Export as image") },
+                                    text = { Text(stringResource(R.string.export_as_image)) },
                                     onClick = {
                                         viewModel.exportPageAsImage(currentPage)?.let { file ->
                                             shareImageFile(context, file)
@@ -160,7 +164,7 @@ fun DocumentViewerScreen(
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Delete Page") },
+                                    text = { Text(stringResource(R.string.delete_page)) },
                                     onClick = {
                                         viewModel.deletePage(currentPage.id)
                                         showPageMenu = false
@@ -180,7 +184,7 @@ fun DocumentViewerScreen(
                 else
                     MaterialTheme.colorScheme.surfaceVariant
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add page")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_page))
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -205,7 +209,7 @@ fun DocumentViewerScreen(
                 } else {
                     AsyncImage(
                         model = page.imagePath,
-                        contentDescription = "Page ${pageIndex + 1}",
+                        contentDescription = stringResource(R.string.page_number, pageIndex + 1),
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -215,7 +219,7 @@ fun DocumentViewerScreen(
             // Page indicator
             if (uiState.pages.isNotEmpty()) {
                 Text(
-                    text = "${pagerState.currentPage + 1} / ${uiState.pages.size}",
+                    text = stringResource(R.string.page_indicator, pagerState.currentPage + 1, uiState.pages.size),
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.align(Alignment.CenterHorizontally).padding(4.dp)
                 )
@@ -251,5 +255,5 @@ private fun shareImageFile(context: android.content.Context, file: java.io.File)
         putExtra(Intent.EXTRA_STREAM, uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
-    context.startActivity(Intent.createChooser(intent, "Share Image"))
+    context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_image)))
 }

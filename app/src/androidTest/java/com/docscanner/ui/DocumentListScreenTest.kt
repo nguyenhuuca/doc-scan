@@ -8,6 +8,8 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.lifecycle.MutableLiveData
+import androidx.test.core.app.ApplicationProvider
+import com.docscanner.R
 import com.docscanner.domain.model.Document
 import com.docscanner.domain.model.Page
 import com.docscanner.domain.usecase.DeleteDocumentUseCase
@@ -27,6 +29,8 @@ class DocumentListScreenTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    private val context = ApplicationProvider.getApplicationContext<android.content.Context>()
 
     private fun makeRepo(
         documents: List<Document> = emptyList(),
@@ -69,7 +73,7 @@ class DocumentListScreenTest {
                 )
             }
         }
-        composeTestRule.onNodeWithText("No documents yet").assertIsDisplayed()
+        composeTestRule.onNodeWithText(context.getString(R.string.no_documents_yet)).assertIsDisplayed()
     }
 
     @Test

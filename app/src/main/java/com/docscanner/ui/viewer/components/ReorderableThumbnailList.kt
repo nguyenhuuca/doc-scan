@@ -13,8 +13,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.docscanner.R
 import com.docscanner.domain.model.Page
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -48,7 +50,7 @@ fun ReorderableThumbnailList(
             ReorderableItem(reorderState, key = page.id) { isDragging ->
                 AsyncImage(
                     model = page.imagePath,
-                    contentDescription = "Page ${page.pageNumber}",
+                    contentDescription = stringResource(R.string.page_number, page.pageNumber),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(64.dp)

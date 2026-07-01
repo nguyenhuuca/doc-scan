@@ -42,9 +42,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.Image
+import com.docscanner.R
 import com.docscanner.common.AppConfig
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,13 +83,13 @@ fun EditScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Edit Page ${viewModel.pageIndex + 1}") },
+                title = { Text(stringResource(R.string.edit_page_title, viewModel.pageIndex + 1)) },
                 navigationIcon = {
                     IconButton(onClick = {
                         if (uiState.hasUnsavedChanges) showDiscardDialog = true
                         else onNavigateBack()
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
@@ -94,7 +97,7 @@ fun EditScreen(
                         onClick = { viewModel.undo() },
                         enabled = uiState.canUndo
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo")
+                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.undo))
                     }
                 }
             )
@@ -116,7 +119,7 @@ fun EditScreen(
                 uiState.currentBitmap?.let { bitmap ->
                     Image(
                         bitmap = bitmap.asImageBitmap(),
-                        contentDescription = "Page preview",
+                        contentDescription = stringResource(R.string.page_preview),
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -143,14 +146,14 @@ fun EditScreen(
                         onClick = { viewModel.rotate() },
                         enabled = !uiState.isProcessing
                     ) {
-                        Icon(Icons.Default.Rotate90DegreesCw, contentDescription = "Rotate 90°")
+                        Icon(Icons.Default.Rotate90DegreesCw, contentDescription = stringResource(R.string.rotate_90))
                     }
-                    Text("Rotate 90°", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.rotate_90), style = MaterialTheme.typography.bodyLarge)
                 }
 
                 // Brightness slider
                 Column {
-                    Text("Brightness: ${brightnessValue.toInt()}", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.brightness_label, brightnessValue.toInt()), style = MaterialTheme.typography.labelSmall)
                     Slider(
                         value = brightnessValue,
                         onValueChange = {
@@ -164,7 +167,10 @@ fun EditScreen(
 
                 // Contrast slider
                 Column {
-                    Text("Contrast: ${"%.2f".format(contrastValue)}", style = MaterialTheme.typography.labelSmall)
+                    Text(
+                        stringResource(R.string.contrast_label, String.format(Locale.US, "%.2f", contrastValue)),
+                        style = MaterialTheme.typography.labelSmall
+                    )
                     Slider(
                         value = contrastValue,
                         onValueChange = {
@@ -181,7 +187,7 @@ fun EditScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Grayscale", modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.grayscale), modifier = Modifier.weight(1f))
                     Switch(
                         checked = isGrayscale,
                         onCheckedChange = {
@@ -198,7 +204,7 @@ fun EditScreen(
                     enabled = uiState.hasUnsavedChanges && !uiState.isProcessing,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Save")
+                    Text(stringResource(R.string.save))
                 }
             }
         }
@@ -207,16 +213,16 @@ fun EditScreen(
     if (showDiscardDialog) {
         AlertDialog(
             onDismissRequest = { showDiscardDialog = false },
-            title = { Text("Discard Changes?") },
-            text = { Text("You have unsaved changes. Discard them?") },
+            title = { Text(stringResource(R.string.discard_changes_title)) },
+            text = { Text(stringResource(R.string.unsaved_changes_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDiscardDialog = false
                     onNavigateBack()
-                }) { Text("Discard") }
+                }) { Text(stringResource(R.string.discard)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDiscardDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showDiscardDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }

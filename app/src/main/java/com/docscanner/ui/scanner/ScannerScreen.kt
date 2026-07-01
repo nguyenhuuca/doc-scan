@@ -98,7 +98,7 @@ fun ScannerScreen(
     if (showGmsUpdateDialog) {
         AlertDialog(
             onDismissRequest = { showGmsUpdateDialog = false; onNavigateBack() },
-            title = { Text("Update Required") },
+            title = { Text(stringResource(R.string.update_required_title)) },
             text = { Text(stringResource(R.string.gms_update_required)) },
             confirmButton = {
                 TextButton(onClick = { showGmsUpdateDialog = false; onNavigateBack() }) {
@@ -111,11 +111,11 @@ fun ScannerScreen(
     if (showErrorDialog) {
         AlertDialog(
             onDismissRequest = { showErrorDialog = false; onNavigateBack() },
-            title = { Text("Scan Failed") },
+            title = { Text(stringResource(R.string.scan_failed_title)) },
             text = { Text(errorDialogMessage) },
             confirmButton = {
                 TextButton(onClick = { showErrorDialog = false; onNavigateBack() }) {
-                    Text("OK")
+                    Text(stringResource(R.string.ok))
                 }
             }
         )

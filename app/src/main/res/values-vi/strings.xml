@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Doc Scanner</string>
+    <string name="scan_new_document">Quét tài liệu mới</string>
+    <string name="document_limit_reached">Đã đạt giới hạn tài liệu (100). Xóa tài liệu hiện có để tạo tài liệu mới.</string>
+    <string name="low_storage_warning_title">Dung lượng thấp</string>
+    <string name="low_storage_warning_message">Còn dưới 100 MB dung lượng trống. Bản quét có thể không lưu được. Hãy giải phóng dung lượng và thử lại.</string>
+    <string name="low_storage_blocked_message">Không đủ dung lượng. Hãy giải phóng ít nhất 50 MB để quét.</string>
+    <string name="scan_failed">Quét thất bại. Vui lòng thử lại.</string>
+    <string name="export_failed">Xuất thất bại. Vui lòng thử lại.</string>
+    <string name="rename_document">Đổi tên tài liệu</string>
+    <string name="delete_document">Xóa tài liệu</string>
+    <string name="delete_confirm_message">Tài liệu này và tất cả các trang của nó sẽ bị xóa vĩnh viễn. Không thể hoàn tác hành động này.</string>
+    <string name="cancel">Hủy</string>
+    <string name="delete">Xóa</string>
+    <string name="save">Lưu</string>
+    <string name="discard">Bỏ qua</string>
+    <string name="unsaved_changes_message">Bạn có thay đổi chưa được lưu. Bỏ qua các thay đổi này?</string>
+    <string name="open_settings">Mở Cài đặt</string>
+    <string name="camera_permission_rationale">Cần quyền truy cập camera để quét tài liệu.</string>
+    <string name="gms_update_required">Cần cập nhật Google Play Services để sử dụng chức năng quét tài liệu.</string>
+    <string name="update">Cập nhật</string>
+    <string name="export_pdf">Xuất PDF</string>
+    <string name="uninstall_warning">Cảnh báo: Tất cả tài liệu sẽ bị xóa khi bạn gỡ cài đặt ứng dụng này.</string>
+
+    <!-- Common / shared across screens -->
+    <string name="back">Quay lại</string>
+    <string name="rename">Đổi tên</string>
+    <string name="settings">Cài đặt</string>
+    <string name="ok">OK</string>
+
+    <!-- Document Viewer -->
+    <string name="more_options">Tùy chọn khác</string>
+    <string name="import_from_gallery">Nhập từ thư viện ảnh</string>
+    <string name="edit_page_menu">Chỉnh sửa trang</string>
+    <string name="export_as_image">Xuất dưới dạng ảnh</string>
+    <string name="delete_page">Xóa trang</string>
+    <string name="add_page">Thêm trang</string>
+    <string name="page_number">Trang %1$d</string>
+    <string name="page_indicator">%1$d / %2$d</string>
+    <string name="share_pdf">Chia sẻ PDF</string>
+    <string name="share_image">Chia sẻ ảnh</string>
+
+    <!-- Edit Page -->
+    <string name="edit_page_title">Chỉnh sửa trang %1$d</string>
+    <string name="undo">Hoàn tác</string>
+    <string name="page_preview">Xem trước trang</string>
+    <string name="rotate_90">Xoay 90°</string>
+    <string name="brightness_label">Độ sáng: %1$d</string>
+    <string name="contrast_label">Độ tương phản: %1$s</string>
+    <string name="grayscale">Thang độ xám</string>
+    <string name="discard_changes_title">Bỏ qua thay đổi?</string>
+
+    <!-- Document List -->
+    <string name="no_documents_yet">Chưa có tài liệu nào</string>
+    <string name="tap_to_scan_hint">Nhấn + để quét tài liệu đầu tiên của bạn</string>
+    <string name="no_results_for_query">Không có kết quả cho \"%1$s\"</string>
+    <string name="search_documents_placeholder">Tìm kiếm tài liệu…</string>
+    <string name="clear_search">Xóa tìm kiếm</string>
+    <string name="sort_by_name">Sắp xếp theo tên</string>
+    <string name="sort_by_date">Sắp xếp theo ngày</string>
+
+    <!-- Rename Dialog -->
+    <string name="document_name_label">Tên tài liệu</string>
+    <string name="name_empty_error">Tên không được để trống.</string>
+    <string name="name_too_long_error">Tên phải có tối đa 50 ký tự.</string>
+    <string name="name_invalid_chars_error">Tên chứa ký tự không hợp lệ.</string>
+
+    <!-- Scanner -->
+    <string name="update_required_title">Cần cập nhật</string>
+    <string name="scan_failed_title">Quét thất bại</string>
+
+    <!-- Manual Crop -->
+    <string name="capture">Chụp</string>
+    <string name="captured_image">Ảnh đã chụp</string>
+    <string name="retake">Chụp lại</string>
+    <string name="use_photo">Dùng ảnh này</string>
+
+    <!-- Settings -->
+    <string name="app_version_label">Phiên bản ứng dụng</string>
+    <string name="documents_label">Tài liệu</string>
+    <string name="storage_used_label">Dung lượng đã dùng</string>
+    <string name="language_label">Ngôn ngữ</string>
+    <string name="language_system_default">Theo hệ thống</string>
+    <string name="language_english">English</string>
+    <string name="language_vietnamese">Tiếng Việt</string>
+    <string name="whats_new_title">Có gì mới</string>
+
+    <!-- Document Card -->
+    <plurals name="page_count">
+        <item quantity="other">%d trang</item>
+    </plurals>
+</resources>

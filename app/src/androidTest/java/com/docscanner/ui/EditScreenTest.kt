@@ -9,6 +9,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.lifecycle.SavedStateHandle
+import androidx.test.core.app.ApplicationProvider
+import com.docscanner.R
 import com.docscanner.domain.model.Document
 import com.docscanner.domain.model.Page
 import com.docscanner.ui.edit.EditScreen
@@ -27,6 +29,7 @@ class EditScreenTest {
 
     private val testPage = Page("p1", "doc1", 0, "/fake/page.jpg", 0L)
     private val testBitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+    private val context = ApplicationProvider.getApplicationContext<android.content.Context>()
 
     private fun makeRepo() = object : com.docscanner.data.repository.DocumentRepository {
         override fun getAllDocuments(): Flow<List<Document>> = flowOf(emptyList())
@@ -54,7 +57,7 @@ class EditScreenTest {
         composeTestRule.setContent {
             DocScannerTheme { EditScreen(viewModel = vm, onNavigateBack = {}) }
         }
-        composeTestRule.onNodeWithText("Edit Page 1").assertIsDisplayed()
+        composeTestRule.onNodeWithText(context.getString(R.string.edit_page_title, 1)).assertIsDisplayed()
     }
 
     @Test
@@ -64,7 +67,7 @@ class EditScreenTest {
         composeTestRule.setContent {
             DocScannerTheme { EditScreen(viewModel = vm, onNavigateBack = {}) }
         }
-        composeTestRule.onNodeWithText("Save").assertIsNotEnabled()
+        composeTestRule.onNodeWithText(context.getString(R.string.save)).assertIsNotEnabled()
     }
 
     @Test
@@ -74,6 +77,6 @@ class EditScreenTest {
         composeTestRule.setContent {
             DocScannerTheme { EditScreen(viewModel = vm, onNavigateBack = {}) }
         }
-        composeTestRule.onNodeWithContentDescription("Undo").assertIsNotEnabled()
+        composeTestRule.onNodeWithContentDescription(context.getString(R.string.undo)).assertIsNotEnabled()
     }
 }

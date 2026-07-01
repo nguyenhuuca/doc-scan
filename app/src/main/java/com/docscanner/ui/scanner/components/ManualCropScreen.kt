@@ -36,9 +36,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.docscanner.R
 import com.docscanner.ui.scanner.ScannerViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -114,7 +116,7 @@ fun ManualCropScreen(
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 32.dp)
             ) {
-                Text("Capture")
+                Text(stringResource(R.string.capture))
             }
         }
     } else {
@@ -131,7 +133,7 @@ fun ManualCropScreen(
             ) {
                 androidx.compose.foundation.Image(
                     bitmap = bitmap.asImageBitmap(),
-                    contentDescription = "Captured image",
+                    contentDescription = stringResource(R.string.captured_image),
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -154,7 +156,7 @@ fun ManualCropScreen(
                 OutlinedButton(
                     onClick = { capturedBitmap = null; quad = null },
                     modifier = Modifier.weight(1f)
-                ) { Text("Retake") }
+                ) { Text(stringResource(R.string.retake)) }
 
                 Spacer(modifier = Modifier.width(16.dp))
 
@@ -171,7 +173,7 @@ fun ManualCropScreen(
                     },
                     enabled = !isProcessing,
                     modifier = Modifier.weight(1f)
-                ) { Text("Use Photo") }
+                ) { Text(stringResource(R.string.use_photo)) }
             }
         }
     }
