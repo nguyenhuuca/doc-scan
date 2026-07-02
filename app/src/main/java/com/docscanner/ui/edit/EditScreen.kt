@@ -34,7 +34,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -58,8 +57,6 @@ fun EditScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showDiscardDialog by remember { mutableStateOf(false) }
-    var brightnessValue by remember { mutableFloatStateOf(0f) }
-    var contrastValue by remember { mutableFloatStateOf(1f) }
     var isGrayscale by remember { mutableStateOf(false) }
 
     BackHandler(enabled = uiState.hasUnsavedChanges) {
@@ -153,13 +150,10 @@ fun EditScreen(
 
                 // Brightness slider
                 Column {
-                    Text(stringResource(R.string.brightness_label, brightnessValue.toInt()), style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.brightness_label, uiState.brightness.toInt()), style = MaterialTheme.typography.labelSmall)
                     Slider(
-                        value = brightnessValue,
-                        onValueChange = {
-                            brightnessValue = it
-                            viewModel.adjustBrightness(it)
-                        },
+                        value = uiState.brightness,
+                        onValueChange = { viewModel.adjustBrightness(it) },
                         valueRange = AppConfig.EDIT_BRIGHTNESS_MIN..AppConfig.EDIT_BRIGHTNESS_MAX,
                         enabled = !uiState.isProcessing
                     )
@@ -168,15 +162,12 @@ fun EditScreen(
                 // Contrast slider
                 Column {
                     Text(
-                        stringResource(R.string.contrast_label, String.format(Locale.US, "%.2f", contrastValue)),
+                        stringResource(R.string.contrast_label, String.format(Locale.US, "%.2f", uiState.contrast)),
                         style = MaterialTheme.typography.labelSmall
                     )
                     Slider(
-                        value = contrastValue,
-                        onValueChange = {
-                            contrastValue = it
-                            viewModel.adjustContrast(it)
-                        },
+                        value = uiState.contrast,
+                        onValueChange = { viewModel.adjustContrast(it) },
                         valueRange = AppConfig.EDIT_CONTRAST_MIN..AppConfig.EDIT_CONTRAST_MAX,
                         enabled = !uiState.isProcessing
                     )

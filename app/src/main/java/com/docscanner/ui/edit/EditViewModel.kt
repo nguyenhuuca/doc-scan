@@ -29,7 +29,9 @@ data class EditUiState(
     val hasUnsavedChanges: Boolean = false,
     val canUndo: Boolean = false,
     val isSaved: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val brightness: Float = 0f,
+    val contrast: Float = 1f
 )
 
 @OptIn(FlowPreview::class)
@@ -53,23 +55,32 @@ class EditViewModel(
     private val undoStack = ArrayDeque<ByteArray>()
     private val transformMutex = Mutex()
 
+    // Fixed reference bitmap that brightness/contrast are always recomputed from, so
+    // slider values stay absolute instead of compounding on top of the last preview.
+    private var baseBitmap: Bitmap? = null
+    private var liveBrightness: Float = 0f
+    private var liveContrast: Float = 1f
+    // True once an undo entry has been pushed for the in-progress brightness/contrast
+    // gesture, so a long slider drag doesn't flood the undo stack with one entry per tick.
+    private var liveSessionActive: Boolean = false
+
     private val _uiState = MutableStateFlow(EditUiState())
     val uiState: StateFlow<EditUiState> = _uiState.asStateFlow()
 
-    private val brightnessFlow = MutableSharedFlow<Float>(extraBufferCapacity = 1)
-    private val contrastFlow = MutableSharedFlow<Float>(extraBufferCapacity = 1)
+    private val previewTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     init {
         loadInitialPage()
         viewModelScope.launch {
-            brightnessFlow.debounce(SLIDER_DEBOUNCE_MS).collect { value ->
-                applyTransform { bitmap -> ImageProcessor.adjustBrightness(bitmap, value) }
+            previewTrigger.debounce(SLIDER_DEBOUNCE_MS).collect {
+                applyLiveAdjustment()
             }
         }
-        viewModelScope.launch {
-            contrastFlow.debounce(SLIDER_DEBOUNCE_MS).collect { value ->
-                applyTransform { bitmap -> ImageProcessor.adjustContrast(bitmap, value) }
-            }
+    }
+
+    private fun recycleIfOrphaned(bitmap: Bitmap?, vararg keep: Bitmap?) {
+        if (bitmap != null && keep.none { it === bitmap }) {
+            bitmap.recycle()
         }
     }
 
@@ -95,6 +106,7 @@ class EditViewModel(
                 page to bitmap
             }.onSuccess { (page, bitmap) ->
                 currentPage = page
+                baseBitmap = bitmap
                 _uiState.update { it.copy(currentBitmap = bitmap, isProcessing = false) }
             }.onFailure {
                 _uiState.update { it.copy(isProcessing = false, errorMessage = "Failed to load page.") }
@@ -104,11 +116,53 @@ class EditViewModel(
 
     fun rotate() = applyTransform { bitmap -> ImageProcessor.rotateBitmap(bitmap) }
 
-    fun adjustBrightness(value: Float) { brightnessFlow.tryEmit(value) }
+    fun adjustBrightness(value: Float) {
+        liveBrightness = value
+        _uiState.update { it.copy(brightness = value) }
+        previewTrigger.tryEmit(Unit)
+    }
 
-    fun adjustContrast(value: Float) { contrastFlow.tryEmit(value) }
+    fun adjustContrast(value: Float) {
+        liveContrast = value
+        _uiState.update { it.copy(contrast = value) }
+        previewTrigger.tryEmit(Unit)
+    }
 
     fun toGrayscale() = applyTransform { bitmap -> ImageProcessor.toGrayscale(bitmap) }
+
+    private fun applyLiveAdjustment() {
+        viewModelScope.launch {
+            transformMutex.withLock {
+                val base = baseBitmap ?: return@withLock
+                _uiState.update { it.copy(isProcessing = true) }
+                val firstInSession = !liveSessionActive
+                runCatching {
+                    withContext(Dispatchers.Default) {
+                        val result = ImageProcessor.adjustBrightnessContrast(base, liveBrightness, liveContrast)
+                        val undoBytes = if (firstInSession) {
+                            val stream = ByteArrayOutputStream()
+                            base.compress(Bitmap.CompressFormat.JPEG, UNDO_JPEG_QUALITY, stream)
+                            stream.toByteArray()
+                        } else null
+                        result to undoBytes
+                    }
+                }.onSuccess { (result, undoBytes) ->
+                    if (undoBytes != null) {
+                        undoStack.addLast(undoBytes)
+                        if (undoStack.size > MAX_UNDO_STACK) undoStack.removeFirst()
+                        liveSessionActive = true
+                    }
+                    val old = _uiState.value.currentBitmap
+                    _uiState.update {
+                        it.copy(currentBitmap = result, isProcessing = false, hasUnsavedChanges = true, canUndo = true)
+                    }
+                    recycleIfOrphaned(old, result, base)
+                }.onFailure {
+                    _uiState.update { it.copy(isProcessing = false, errorMessage = "Processing failed.") }
+                }
+            }
+        }
+    }
 
     fun undo() {
         viewModelScope.launch {
@@ -120,14 +174,22 @@ class EditViewModel(
                 BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
             }
             val old = _uiState.value.currentBitmap
+            val oldBase = baseBitmap
+            baseBitmap = previous
+            liveSessionActive = false
+            liveBrightness = 0f
+            liveContrast = 1f
             _uiState.update {
                 it.copy(
                     currentBitmap = previous,
                     canUndo = undoStack.isNotEmpty(),
-                    hasUnsavedChanges = undoStack.isNotEmpty()
+                    hasUnsavedChanges = undoStack.isNotEmpty(),
+                    brightness = 0f,
+                    contrast = 1f
                 )
             }
-            old?.recycle()
+            recycleIfOrphaned(old, previous)
+            recycleIfOrphaned(oldBase, previous, old)
         }
     }
 
@@ -141,8 +203,19 @@ class EditViewModel(
             }.onSuccess {
                 currentPage = it
                 undoStack.clear()
+                baseBitmap = bitmap
+                liveSessionActive = false
+                liveBrightness = 0f
+                liveContrast = 1f
                 _uiState.update { state ->
-                    state.copy(isProcessing = false, hasUnsavedChanges = false, isSaved = true, canUndo = false)
+                    state.copy(
+                        isProcessing = false,
+                        hasUnsavedChanges = false,
+                        isSaved = true,
+                        canUndo = false,
+                        brightness = 0f,
+                        contrast = 1f
+                    )
                 }
             }.onFailure {
                 _uiState.update { state ->
@@ -163,6 +236,7 @@ class EditViewModel(
                     _uiState.update { it.copy(isProcessing = false) }
                     return@withLock
                 }
+                val oldBase = baseBitmap
                 runCatching {
                     withContext(Dispatchers.Default) {
                         val newBitmap = transform(current)
@@ -173,10 +247,22 @@ class EditViewModel(
                 }.onSuccess { (newBitmap, undoBytes) ->
                     undoStack.addLast(undoBytes)
                     if (undoStack.size > MAX_UNDO_STACK) undoStack.removeFirst()
+                    baseBitmap = newBitmap
+                    liveSessionActive = false
+                    liveBrightness = 0f
+                    liveContrast = 1f
                     _uiState.update {
-                        it.copy(currentBitmap = newBitmap, isProcessing = false, hasUnsavedChanges = true, canUndo = true)
+                        it.copy(
+                            currentBitmap = newBitmap,
+                            isProcessing = false,
+                            hasUnsavedChanges = true,
+                            canUndo = true,
+                            brightness = 0f,
+                            contrast = 1f
+                        )
                     }
-                    current.recycle()
+                    recycleIfOrphaned(current, newBitmap)
+                    recycleIfOrphaned(oldBase, newBitmap, current)
                 }.onFailure {
                     _uiState.update { it.copy(isProcessing = false, errorMessage = "Processing failed.") }
                 }
@@ -186,7 +272,9 @@ class EditViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        _uiState.value.currentBitmap?.recycle()
+        val current = _uiState.value.currentBitmap
+        current?.recycle()
+        recycleIfOrphaned(baseBitmap, current)
         undoStack.clear()
     }
 }
