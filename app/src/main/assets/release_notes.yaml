@@ -1,3 +1,11 @@
+- version: "1.5.2"
+  date: "02/07/2026"
+  changes:
+    - "Sửa lỗi có thể gây crash khi bấm Hoàn tác ngay trong lúc đang chỉnh sáng/tương phản"
+    - "Màn hình Cài đặt mở mượt hơn — không còn khựng khi có nhiều tài liệu"
+    - "Lưu trang và mở máy quét phản hồi nhanh hơn, không còn chặn giao diện khi kiểm tra dung lượng"
+    - "Thông báo 'thiếu file trang' giờ hiển thị đúng tiếng Việt"
+
 - version: "1.5.1"
   date: "02/07/2026"
   changes:
