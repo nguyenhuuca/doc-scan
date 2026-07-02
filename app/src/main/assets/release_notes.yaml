@@ -1,3 +1,8 @@
+- version: "1.5.1"
+  date: "02/07/2026"
+  changes:
+    - "Sửa lỗi chỉnh sáng/tương phản: kéo thanh trượt không còn làm ảnh cháy sáng trắng xóa hoặc tối đen kịt — giờ đây phản ánh đúng giá trị đã chọn"
+
 - version: "1.5.0"
   date: "01/07/2026"
   changes:
