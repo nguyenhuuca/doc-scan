@@ -2,6 +2,8 @@ package com.docscanner.ui.common
 
 import android.os.StatFs
 import com.docscanner.common.AppConfig
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 sealed class StorageState {
@@ -19,8 +21,9 @@ object StorageChecker {
         else -> StorageState.Sufficient
     }
 
-    fun check(directory: File): StorageState {
+    // StatFs is a blocking statvfs() syscall, so it runs on the IO dispatcher.
+    suspend fun check(directory: File): StorageState = withContext(Dispatchers.IO) {
         val stat = StatFs(directory.absolutePath)
-        return classify(stat.availableBlocksLong * stat.blockSizeLong)
+        classify(stat.availableBlocksLong * stat.blockSizeLong)
     }
 }

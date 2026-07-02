@@ -9,6 +9,8 @@ import com.docscanner.common.exceptions.StorageFullException
 import com.docscanner.data.repository.DocumentRepository
 import com.docscanner.domain.model.Document
 import com.docscanner.domain.model.Page
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -30,18 +32,20 @@ class SaveDocumentUseCase(
     }
 
     suspend fun createDocument(bitmap: Bitmap): Document {
-        validateStorage()
+        withContext(Dispatchers.IO) { validateStorage() }
         validateDocumentCount(repository.getDocumentCount())
         val name = buildDocumentName()
         return repository.createDocument(name, bitmap)
     }
 
     suspend fun addPage(documentId: String, bitmap: Bitmap): Page {
-        validateStorage()
+        withContext(Dispatchers.IO) { validateStorage() }
         validatePageCount(repository.getPageCount(documentId), documentId)
         return repository.addPage(documentId, bitmap)
     }
 
+    // StatFs is a blocking statvfs() syscall — callers must dispatch to IO.
+    // Kept non-suspend so pure-logic unit tests can call it directly.
     internal fun validateStorage() {
         val bytes = availableBytes(storageDir)
         if (bytes < MIN_STORAGE_BYTES) throw StorageFullException(bytes)
@@ -66,7 +70,7 @@ class SaveDocumentUseCase(
 
     suspend fun addPages(documentId: String, bitmaps: List<Bitmap>): List<Page> {
         if (bitmaps.isEmpty()) return emptyList()
-        validateStorage()
+        withContext(Dispatchers.IO) { validateStorage() }
         val currentCount = repository.getPageCount(documentId)
         validateBatchPageCount(currentCount, bitmaps.size, documentId)
         return repository.addPages(documentId, bitmaps)

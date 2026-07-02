@@ -90,4 +90,8 @@
     <plurals name="page_count">
         <item quantity="other">%d trang</item>
     </plurals>
+
+    <!-- Missing page placeholder -->
+    <string name="page_file_missing_title">Thiếu file trang</string>
+    <string name="page_file_missing_body">Không tìm thấy file ảnh của trang này. File có thể đã bị di chuyển hoặc xóa bên ngoài ứng dụng.</string>
 </resources>

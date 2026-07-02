@@ -43,16 +43,17 @@ class ScannerViewModel(
     val uiState: StateFlow<ScannerUiState> = _uiState.asStateFlow()
 
     fun checkStorageAndLaunch(context: Context, launch: () -> Unit) {
-        val state = StorageChecker.check(context.filesDir)
-        when (state) {
-            is StorageState.Blocked -> {
-                _uiState.update { it.copy(errorMessage = "Not enough storage. Free up at least ${AppConfig.MIN_STORAGE_BYTES / (1024 * 1024)} MB to scan.") }
+        viewModelScope.launch {
+            when (val state = StorageChecker.check(context.filesDir)) {
+                is StorageState.Blocked -> {
+                    _uiState.update { it.copy(errorMessage = "Not enough storage. Free up at least ${AppConfig.MIN_STORAGE_BYTES / (1024 * 1024)} MB to scan.") }
+                }
+                is StorageState.Warning -> {
+                    _uiState.update { it.copy(showStorageWarning = true, availableStorageBytes = state.availableBytes) }
+                    launch()
+                }
+                is StorageState.Sufficient -> launch()
             }
-            is StorageState.Warning -> {
-                _uiState.update { it.copy(showStorageWarning = true, availableStorageBytes = state.availableBytes) }
-                launch()
-            }
-            is StorageState.Sufficient -> launch()
         }
     }
 

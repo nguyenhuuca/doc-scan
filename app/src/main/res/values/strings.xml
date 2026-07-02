@@ -91,4 +91,8 @@
         <item quantity="one">%d page</item>
         <item quantity="other">%d pages</item>
     </plurals>
+
+    <!-- Missing page placeholder -->
+    <string name="page_file_missing_title">Page file missing</string>
+    <string name="page_file_missing_body">This page\'s image file could not be found. It may have been moved or deleted outside the app.</string>
 </resources>
