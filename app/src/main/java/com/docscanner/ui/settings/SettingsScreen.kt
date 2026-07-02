@@ -26,44 +26,26 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.docscanner.BuildConfig
+import com.docscanner.common.AppConfig
 import com.docscanner.common.AppLanguage
-import com.docscanner.MyApplication
 import com.docscanner.R
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import java.io.File
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onNavigateBack: () -> Unit) {
-    val context = LocalContext.current
-    val app = context.applicationContext as MyApplication
-
-    val documentCount = remember {
-        runBlocking { app.container.documentRepository.getDocumentCount() }
-    }
-
-    val storageUsedBytes = remember {
-        calculateStorageUsed(File(context.filesDir, "documents"))
-    }
-
-    var releaseNotes by remember { mutableStateOf<List<ReleaseNote>>(emptyList()) }
-    LaunchedEffect(Unit) {
-        releaseNotes = withContext(Dispatchers.IO) { loadReleaseNotes(context) }
-    }
+fun SettingsScreen(
+    viewModel: SettingsViewModel,
+    onNavigateBack: () -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
@@ -98,8 +80,11 @@ fun SettingsScreen(onNavigateBack: () -> Unit) {
                 }
                 Spacer(modifier = Modifier.height(24.dp))
                 SettingsRow(label = stringResource(R.string.app_version_label), value = BuildConfig.VERSION_NAME)
-                SettingsRow(label = stringResource(R.string.documents_label), value = "$documentCount / 100")
-                SettingsRow(label = stringResource(R.string.storage_used_label), value = formatBytes(storageUsedBytes))
+                SettingsRow(
+                    label = stringResource(R.string.documents_label),
+                    value = "${uiState.documentCount} / ${AppConfig.MAX_DOCUMENTS}"
+                )
+                SettingsRow(label = stringResource(R.string.storage_used_label), value = formatBytes(uiState.storageUsedBytes))
                 Spacer(modifier = Modifier.height(24.dp))
                 LanguagePicker()
                 Spacer(modifier = Modifier.height(24.dp))
@@ -110,7 +95,7 @@ fun SettingsScreen(onNavigateBack: () -> Unit) {
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            items(releaseNotes) { note ->
+            items(uiState.releaseNotes) { note ->
                 ReleaseNoteCard(note)
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -165,11 +150,6 @@ private fun SettingsRow(label: String, value: String) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, style = MaterialTheme.typography.bodyLarge)
     }
-}
-
-private fun calculateStorageUsed(dir: File): Long {
-    if (!dir.exists()) return 0L
-    return dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
 }
 
 private fun formatBytes(bytes: Long): String = when {

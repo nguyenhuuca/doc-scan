@@ -21,6 +21,8 @@ import com.docscanner.ui.edit.EditViewModel
 import com.docscanner.ui.scanner.ScannerScreen
 import com.docscanner.ui.scanner.ScannerViewModel
 import com.docscanner.ui.settings.SettingsScreen
+import com.docscanner.ui.settings.SettingsViewModel
+import com.docscanner.ui.settings.loadReleaseNotes
 import com.docscanner.ui.viewer.DocumentViewerScreen
 import com.docscanner.ui.viewer.DocumentViewerViewModel
 
@@ -145,7 +147,21 @@ fun AppNavGraph(
         }
 
         composable(Routes.SETTINGS) {
-            SettingsScreen(onNavigateBack = { navController.popBackStack() })
+            val viewModel = viewModel<SettingsViewModel>(
+                factory = viewModelFactory {
+                    initializer {
+                        val app = this[APPLICATION_KEY] as MyApplication
+                        SettingsViewModel(
+                            app.container.documentRepository,
+                            app.container.imageStorage
+                        ) { loadReleaseNotes(app) }
+                    }
+                }
+            )
+            SettingsScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }

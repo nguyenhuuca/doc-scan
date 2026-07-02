@@ -73,6 +73,12 @@ class ImageStorage(private val filesDir: File) {
     suspend fun pageFileExists(imagePath: String): Boolean =
         withContext(Dispatchers.IO) { File(imagePath).exists() }
 
+    suspend fun storageUsedBytes(): Long = withContext(Dispatchers.IO) {
+        val root = File(filesDir, "documents")
+        if (!root.exists()) 0L
+        else root.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+    }
+
     private suspend fun downscaleIfNeeded(bitmap: Bitmap): Bitmap {
         val maxWidth = AppConfig.IMAGE_MAX_WIDTH
         val maxHeight = AppConfig.IMAGE_MAX_HEIGHT
