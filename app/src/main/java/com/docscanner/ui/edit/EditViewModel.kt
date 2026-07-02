@@ -166,30 +166,33 @@ class EditViewModel(
 
     fun undo() {
         viewModelScope.launch {
-            val bytes = transformMutex.withLock {
-                if (undoStack.isEmpty()) return@launch
-                undoStack.removeLast()
+            // The whole restore must stay inside the mutex: a debounced live adjustment
+            // running concurrently reads baseBitmap and recycles bitmaps, so decoding,
+            // swapping baseBitmap, and recycling outside the lock races with it.
+            transformMutex.withLock {
+                if (undoStack.isEmpty()) return@withLock
+                val bytes = undoStack.removeLast()
+                val previous = withContext(Dispatchers.Default) {
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                }
+                val old = _uiState.value.currentBitmap
+                val oldBase = baseBitmap
+                baseBitmap = previous
+                liveSessionActive = false
+                liveBrightness = 0f
+                liveContrast = 1f
+                _uiState.update {
+                    it.copy(
+                        currentBitmap = previous,
+                        canUndo = undoStack.isNotEmpty(),
+                        hasUnsavedChanges = undoStack.isNotEmpty(),
+                        brightness = 0f,
+                        contrast = 1f
+                    )
+                }
+                recycleIfOrphaned(old, previous)
+                recycleIfOrphaned(oldBase, previous, old)
             }
-            val previous = withContext(Dispatchers.Default) {
-                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-            }
-            val old = _uiState.value.currentBitmap
-            val oldBase = baseBitmap
-            baseBitmap = previous
-            liveSessionActive = false
-            liveBrightness = 0f
-            liveContrast = 1f
-            _uiState.update {
-                it.copy(
-                    currentBitmap = previous,
-                    canUndo = undoStack.isNotEmpty(),
-                    hasUnsavedChanges = undoStack.isNotEmpty(),
-                    brightness = 0f,
-                    contrast = 1f
-                )
-            }
-            recycleIfOrphaned(old, previous)
-            recycleIfOrphaned(oldBase, previous, old)
         }
     }
 

@@ -92,7 +92,7 @@ fun EditScreen(
                 actions = {
                     IconButton(
                         onClick = { viewModel.undo() },
-                        enabled = uiState.canUndo
+                        enabled = uiState.canUndo && !uiState.isProcessing
                     ) {
                         Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.undo))
                     }
