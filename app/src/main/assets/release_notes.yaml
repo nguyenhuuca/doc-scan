@@ -1,3 +1,11 @@
+- version: "1.5.3"
+  date: "03/07/2026"
+  changes:
+    - "Sửa lỗi màn hình cắt ảnh thủ công: chạm/kéo ngoài vùng góc không còn làm góc gần nhất nhảy theo tay"
+    - "Toàn bộ thông báo lỗi hiển thị đúng ngôn ngữ đã chọn (Tiếng Việt/English) thay vì tiếng Anh cố định"
+    - "Màn hình Cài đặt hiển thị thông báo rõ ràng khi không tải được dữ liệu thay vì im lặng"
+    - "Tăng cường bảo vệ dữ liệu: kiểm tra chặt chẽ đường dẫn file ảnh trước mọi thao tác đọc/xóa"
+
 - version: "1.5.2"
   date: "02/07/2026"
   changes:
