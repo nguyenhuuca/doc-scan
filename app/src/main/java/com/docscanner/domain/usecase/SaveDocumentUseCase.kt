@@ -1,8 +1,8 @@
 package com.docscanner.domain.usecase
 
 import android.graphics.Bitmap
-import android.os.StatFs
 import com.docscanner.common.AppConfig
+import com.docscanner.common.StorageChecker
 import com.docscanner.common.exceptions.DocumentLimitException
 import com.docscanner.common.exceptions.PageLimitException
 import com.docscanner.common.exceptions.StorageFullException
@@ -19,11 +19,8 @@ import java.util.Locale
 class SaveDocumentUseCase(
     private val repository: DocumentRepository,
     private val storageDir: File,
-    // Injectable for testing — production default uses StatFs
-    private val availableBytes: (File) -> Long = { dir ->
-        val stat = StatFs(dir.absolutePath)
-        stat.availableBlocksLong * stat.blockSizeLong
-    }
+    // Injectable for testing — production default uses StatFs via StorageChecker
+    private val availableBytes: (File) -> Long = StorageChecker::availableBytes
 ) {
     companion object {
         internal val MIN_STORAGE_BYTES = AppConfig.MIN_STORAGE_BYTES

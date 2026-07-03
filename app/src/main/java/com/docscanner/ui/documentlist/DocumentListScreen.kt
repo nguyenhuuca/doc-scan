@@ -1,7 +1,6 @@
 package com.docscanner.ui.documentlist
 
 import android.content.Context
-import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,10 +50,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import com.docscanner.R
 import com.docscanner.common.AppConfig
 import com.docscanner.domain.model.Document
+import com.docscanner.ui.common.shareFile
 import com.docscanner.ui.documentlist.components.DeleteConfirmDialog
 import com.docscanner.ui.documentlist.components.DocumentCard
 import com.docscanner.ui.documentlist.components.RenameDialog
@@ -85,13 +84,7 @@ fun DocumentListScreen(
 
     LaunchedEffect(uiState.exportedFile) {
         uiState.exportedFile?.let { file ->
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "application/pdf"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_pdf)))
+            shareFile(context, file, "application/pdf", context.getString(R.string.share_pdf))
             viewModel.clearExportedFile()
         }
     }

@@ -1,6 +1,5 @@
 package com.docscanner.ui.viewer
 
-import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -48,10 +47,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.docscanner.R
 import com.docscanner.domain.model.Page
+import com.docscanner.ui.common.shareFile
 import com.docscanner.ui.viewer.components.MissingPagePlaceholder
 import com.docscanner.ui.viewer.components.ReorderableThumbnailList
 
@@ -101,13 +100,7 @@ fun DocumentViewerScreen(
 
     LaunchedEffect(uiState.exportedFile) {
         uiState.exportedFile?.let { file ->
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "application/pdf"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            context.startActivity(Intent.createChooser(intent, sharePdfLabel))
+            shareFile(context, file, "application/pdf", sharePdfLabel)
             viewModel.clearExportedFile()
         }
     }
@@ -247,13 +240,5 @@ fun DocumentViewerScreen(
 }
 
 private fun shareImageFile(context: android.content.Context, file: java.io.File) {
-    val uri = androidx.core.content.FileProvider.getUriForFile(
-        context, "${context.packageName}.fileprovider", file
-    )
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "image/jpeg"
-        putExtra(Intent.EXTRA_STREAM, uri)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-    context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_image)))
+    shareFile(context, file, "image/jpeg", context.getString(R.string.share_image))
 }

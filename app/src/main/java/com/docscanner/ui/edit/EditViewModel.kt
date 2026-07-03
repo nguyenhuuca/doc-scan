@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docscanner.R
 import com.docscanner.common.AppConfig
-import com.docscanner.common.calcInSampleSize
+import com.docscanner.common.decodeSampledBitmap
 import com.docscanner.data.repository.DocumentRepository
 import com.docscanner.domain.model.Page
 import com.docscanner.ui.common.UiMessage
@@ -86,6 +86,11 @@ class EditViewModel(
         }
     }
 
+    private fun pushUndo(bytes: ByteArray) {
+        undoStack.addLast(bytes)
+        if (undoStack.size > MAX_UNDO_STACK) undoStack.removeFirst()
+    }
+
     private fun loadInitialPage() {
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessing = true) }
@@ -93,17 +98,7 @@ class EditViewModel(
                 val pages = repository.getPagesForDocument(documentId)
                 val page = pages.getOrNull(pageIndex) ?: error("Page $pageIndex not found")
                 val bitmap = withContext(Dispatchers.Default) {
-                    val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                    BitmapFactory.decodeFile(page.imagePath, opts)
-                    if (opts.outWidth <= 0) null
-                    else {
-                        opts.inSampleSize = calcInSampleSize(
-                            opts.outWidth, opts.outHeight,
-                            AppConfig.IMAGE_MAX_WIDTH, AppConfig.IMAGE_MAX_HEIGHT
-                        )
-                        opts.inJustDecodeBounds = false
-                        BitmapFactory.decodeFile(page.imagePath, opts)
-                    }
+                    decodeSampledBitmap(page.imagePath, AppConfig.IMAGE_MAX_WIDTH, AppConfig.IMAGE_MAX_HEIGHT)
                 } ?: error("Failed to decode page image")
                 page to bitmap
             }.onSuccess { (page, bitmap) ->
@@ -150,8 +145,7 @@ class EditViewModel(
                     }
                 }.onSuccess { (result, undoBytes) ->
                     if (undoBytes != null) {
-                        undoStack.addLast(undoBytes)
-                        if (undoStack.size > MAX_UNDO_STACK) undoStack.removeFirst()
+                        pushUndo(undoBytes)
                         liveSessionActive = true
                     }
                     val old = _uiState.value.currentBitmap
@@ -250,8 +244,7 @@ class EditViewModel(
                         newBitmap to stream.toByteArray()
                     }
                 }.onSuccess { (newBitmap, undoBytes) ->
-                    undoStack.addLast(undoBytes)
-                    if (undoStack.size > MAX_UNDO_STACK) undoStack.removeFirst()
+                    pushUndo(undoBytes)
                     baseBitmap = newBitmap
                     liveSessionActive = false
                     liveBrightness = 0f

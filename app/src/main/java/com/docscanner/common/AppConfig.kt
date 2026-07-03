@@ -42,6 +42,8 @@ object AppConfig {
     // ── Limits ─────────────────────────────────────────────────────────────────
     /** Maximum number of documents the app will store. */
     const val MAX_DOCUMENTS       = 100
+    /** Maximum length of a document name in characters. */
+    const val MAX_DOCUMENT_NAME_LENGTH = 50
     /** Maximum pages per document. */
     const val MAX_PAGES           = 50
     /** Minimum free storage required before any save operation (50 MB). */

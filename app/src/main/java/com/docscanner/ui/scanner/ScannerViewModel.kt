@@ -2,20 +2,19 @@ package com.docscanner.ui.scanner
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docscanner.common.AppConfig
-import com.docscanner.common.calcInSampleSize
+import com.docscanner.common.decodeSampledBitmap
 import com.docscanner.common.exceptions.DocumentLimitException
 import com.docscanner.common.exceptions.PageLimitException
 import com.docscanner.common.exceptions.StorageFullException
 import com.docscanner.R
 import com.docscanner.domain.usecase.SaveDocumentUseCase
-import com.docscanner.ui.common.StorageChecker
-import com.docscanner.ui.common.StorageState
+import com.docscanner.common.StorageChecker
+import com.docscanner.common.StorageState
 import com.docscanner.ui.common.UiMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -79,11 +78,7 @@ class ScannerViewModel(
 
                 val bitmaps = withContext(Dispatchers.Default) {
                     rawBytes.mapNotNull { bytes ->
-                        val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
-                        opts.inSampleSize = calcInSampleSize(opts.outWidth, opts.outHeight, AppConfig.IMAGE_MAX_WIDTH, AppConfig.IMAGE_MAX_HEIGHT)
-                        opts.inJustDecodeBounds = false
-                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
+                        decodeSampledBitmap(bytes, AppConfig.IMAGE_MAX_WIDTH, AppConfig.IMAGE_MAX_HEIGHT)
                     }
                 }
                 if (bitmaps.isEmpty()) error("Failed to decode scanned images")

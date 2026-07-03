@@ -1,9 +1,8 @@
 package com.docscanner.data.local.filesystem
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import com.docscanner.common.AppConfig
-import com.docscanner.common.calcInSampleSize
+import com.docscanner.common.decodeSampledBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -61,13 +60,8 @@ class ImageStorage(private val filesDir: File) {
     }
 
     suspend fun loadPageBitmap(imagePath: String): Bitmap? = withContext(Dispatchers.IO) {
-        val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeFile(imagePath, opts)
-        if (opts.outWidth <= 0) return@withContext null
         // Cap at storage max to bound memory on large source files
-        opts.inSampleSize = calcInSampleSize(opts.outWidth, opts.outHeight, AppConfig.IMAGE_MAX_WIDTH, AppConfig.IMAGE_MAX_HEIGHT)
-        opts.inJustDecodeBounds = false
-        BitmapFactory.decodeFile(imagePath, opts)
+        decodeSampledBitmap(imagePath, AppConfig.IMAGE_MAX_WIDTH, AppConfig.IMAGE_MAX_HEIGHT)
     }
 
     suspend fun pageFileExists(imagePath: String): Boolean =

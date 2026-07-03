@@ -1,11 +1,10 @@
 package com.docscanner.ui.viewer
 
-import android.graphics.BitmapFactory
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docscanner.common.AppConfig
-import com.docscanner.common.calcInSampleSize
+import com.docscanner.common.decodeSampledBitmap
 import com.docscanner.common.exceptions.PageLimitException
 import com.docscanner.common.exceptions.StorageFullException
 import com.docscanner.data.repository.DocumentRepository
@@ -47,12 +46,6 @@ class DocumentViewerViewModel(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    companion object {
-        private val MAX_PAGES        = AppConfig.MAX_PAGES
-        private val MAX_IMPORT_WIDTH = AppConfig.IMAGE_MAX_WIDTH
-        private val MAX_IMPORT_HEIGHT= AppConfig.IMAGE_MAX_HEIGHT
-    }
-
     val documentId: String = savedStateHandle["documentId"] ?: ""
 
     private val _uiState = MutableStateFlow(DocumentViewerUiState())
@@ -80,7 +73,7 @@ class DocumentViewerViewModel(
                         pages = pages,
                         missingPageIds = missing,
                         isLoading = false,
-                        canAddPage = pages.size < MAX_PAGES
+                        canAddPage = pages.size < AppConfig.MAX_PAGES
                     )
                 }
             }.onFailure {
@@ -156,11 +149,7 @@ class DocumentViewerViewModel(
             runCatching {
                 val bitmaps = withContext(Dispatchers.Default) {
                     validBytes.mapNotNull { bytes ->
-                        val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
-                        opts.inSampleSize = calcInSampleSize(opts.outWidth, opts.outHeight, MAX_IMPORT_WIDTH, MAX_IMPORT_HEIGHT)
-                        opts.inJustDecodeBounds = false
-                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
+                        decodeSampledBitmap(bytes, AppConfig.IMAGE_MAX_WIDTH, AppConfig.IMAGE_MAX_HEIGHT)
                     }
                 }
                 if (bitmaps.isEmpty()) error("Failed to decode images.")
@@ -169,7 +158,7 @@ class DocumentViewerViewModel(
                 loadDocument()
             }.onFailure { e ->
                 val msg = when (e) {
-                    is PageLimitException -> UiMessage(R.string.error_page_limit_reached, listOf(MAX_PAGES))
+                    is PageLimitException -> UiMessage(R.string.error_page_limit_reached, listOf(AppConfig.MAX_PAGES))
                     is StorageFullException -> UiMessage(R.string.error_storage_full_import)
                     else -> UiMessage(R.string.error_import_failed)
                 }

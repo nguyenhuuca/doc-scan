@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.docscanner.R
+import com.docscanner.domain.usecase.DocumentNameValidator
+import com.docscanner.domain.usecase.NameValidationError
 
 @Composable
 fun RenameDialog(
@@ -26,19 +28,15 @@ fun RenameDialog(
     var text by remember { mutableStateOf(currentName) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    val forbiddenChars = Regex("""[/\\:*?"<>|]""")
     val emptyError = stringResource(R.string.name_empty_error)
     val tooLongError = stringResource(R.string.name_too_long_error)
     val invalidCharsError = stringResource(R.string.name_invalid_chars_error)
 
-    fun validate(value: String): String? {
-        val trimmed = value.trim()
-        return when {
-            trimmed.isEmpty() -> emptyError
-            trimmed.length > 50 -> tooLongError
-            forbiddenChars.containsMatchIn(trimmed) -> invalidCharsError
-            else -> null
-        }
+    fun validate(value: String): String? = when (DocumentNameValidator.validate(value)) {
+        NameValidationError.EMPTY -> emptyError
+        NameValidationError.TOO_LONG -> tooLongError
+        NameValidationError.INVALID_CHARS -> invalidCharsError
+        null -> null
     }
 
     AlertDialog(

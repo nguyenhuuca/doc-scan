@@ -1,8 +1,8 @@
 package com.docscanner.data
 
 import com.docscanner.common.AppConfig
-import com.docscanner.ui.common.StorageChecker
-import com.docscanner.ui.common.StorageState
+import com.docscanner.common.StorageChecker
+import com.docscanner.common.StorageState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
