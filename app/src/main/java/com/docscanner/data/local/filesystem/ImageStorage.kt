@@ -45,13 +45,13 @@ class ImageStorage(private val filesDir: File) {
         updatedAt: Long
     ): String {
         if (oldImagePath != null) {
-            withContext(Dispatchers.IO) { File(oldImagePath).delete() }
+            withContext(Dispatchers.IO) { requireContainedImagePath(oldImagePath, filesDir).delete() }
         }
         return savePageImage(documentId, pageNumber, bitmap, updatedAt)
     }
 
     suspend fun deletePageImage(imagePath: String) = withContext(Dispatchers.IO) {
-        File(imagePath).delete()
+        requireContainedImagePath(imagePath, filesDir).delete()
     }
 
     suspend fun deleteDocumentImages(documentId: String) = withContext(Dispatchers.IO) {
@@ -60,12 +60,13 @@ class ImageStorage(private val filesDir: File) {
     }
 
     suspend fun loadPageBitmap(imagePath: String): Bitmap? = withContext(Dispatchers.IO) {
+        val file = requireContainedImagePath(imagePath, filesDir)
         // Cap at storage max to bound memory on large source files
-        decodeSampledBitmap(imagePath, AppConfig.IMAGE_MAX_WIDTH, AppConfig.IMAGE_MAX_HEIGHT)
+        decodeSampledBitmap(file.path, AppConfig.IMAGE_MAX_WIDTH, AppConfig.IMAGE_MAX_HEIGHT)
     }
 
     suspend fun pageFileExists(imagePath: String): Boolean =
-        withContext(Dispatchers.IO) { File(imagePath).exists() }
+        withContext(Dispatchers.IO) { requireContainedImagePath(imagePath, filesDir).exists() }
 
     suspend fun storageUsedBytes(): Long = withContext(Dispatchers.IO) {
         val root = File(filesDir, "documents")
