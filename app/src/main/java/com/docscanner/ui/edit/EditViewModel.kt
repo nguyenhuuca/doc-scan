@@ -42,12 +42,6 @@ class EditViewModel(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    companion object {
-        private val MAX_UNDO_STACK        = AppConfig.EDIT_MAX_UNDO_STACK
-        private val UNDO_JPEG_QUALITY     = AppConfig.EDIT_UNDO_JPEG_QUALITY
-        private val SLIDER_DEBOUNCE_MS    = AppConfig.EDIT_SLIDER_DEBOUNCE_MS
-    }
-
     val documentId: String = savedStateHandle["documentId"] ?: ""
     val pageIndex: Int = savedStateHandle["pageIndex"] ?: 0
 
@@ -74,7 +68,7 @@ class EditViewModel(
     init {
         loadInitialPage()
         viewModelScope.launch {
-            previewTrigger.debounce(SLIDER_DEBOUNCE_MS).collect {
+            previewTrigger.debounce(AppConfig.EDIT_SLIDER_DEBOUNCE_MS).collect {
                 applyLiveAdjustment()
             }
         }
@@ -88,7 +82,7 @@ class EditViewModel(
 
     private fun pushUndo(bytes: ByteArray) {
         undoStack.addLast(bytes)
-        if (undoStack.size > MAX_UNDO_STACK) undoStack.removeFirst()
+        if (undoStack.size > AppConfig.EDIT_MAX_UNDO_STACK) undoStack.removeFirst()
     }
 
     private fun loadInitialPage() {
@@ -138,7 +132,7 @@ class EditViewModel(
                         val result = ImageProcessor.adjustBrightnessContrast(base, liveBrightness, liveContrast)
                         val undoBytes = if (firstInSession) {
                             val stream = ByteArrayOutputStream()
-                            base.compress(Bitmap.CompressFormat.JPEG, UNDO_JPEG_QUALITY, stream)
+                            base.compress(Bitmap.CompressFormat.JPEG, AppConfig.EDIT_UNDO_JPEG_QUALITY, stream)
                             stream.toByteArray()
                         } else null
                         result to undoBytes
@@ -240,7 +234,7 @@ class EditViewModel(
                     withContext(Dispatchers.Default) {
                         val newBitmap = transform(current)
                         val stream = ByteArrayOutputStream()
-                        current.compress(Bitmap.CompressFormat.JPEG, UNDO_JPEG_QUALITY, stream)
+                        current.compress(Bitmap.CompressFormat.JPEG, AppConfig.EDIT_UNDO_JPEG_QUALITY, stream)
                         newBitmap to stream.toByteArray()
                     }
                 }.onSuccess { (newBitmap, undoBytes) ->

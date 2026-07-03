@@ -1,5 +1,6 @@
 package com.docscanner.domain.usecase
 
+import com.docscanner.common.AppConfig
 import com.docscanner.common.exceptions.DocumentLimitException
 import com.docscanner.common.exceptions.PageLimitException
 import com.docscanner.common.exceptions.StorageFullException
@@ -28,14 +29,14 @@ class SaveDocumentUseCaseTest {
     @Test
     fun `createDocument throws DocumentLimitException at 100 documents`() {
         try {
-            makeUseCase().validateDocumentCount(SaveDocumentUseCase.MAX_DOCUMENTS)
+            makeUseCase().validateDocumentCount(AppConfig.MAX_DOCUMENTS)
             fail("Expected DocumentLimitException")
         } catch (e: DocumentLimitException) { /* pass */ }
     }
 
     @Test
     fun `createDocument does not throw at 99 documents`() {
-        makeUseCase().validateDocumentCount(SaveDocumentUseCase.MAX_DOCUMENTS - 1)
+        makeUseCase().validateDocumentCount(AppConfig.MAX_DOCUMENTS - 1)
         // No exception → pass
     }
 
@@ -44,14 +45,14 @@ class SaveDocumentUseCaseTest {
     @Test
     fun `addPage throws PageLimitException at 50 pages`() {
         try {
-            makeUseCase().validatePageCount(SaveDocumentUseCase.MAX_PAGES, "doc-id")
+            makeUseCase().validatePageCount(AppConfig.MAX_PAGES, "doc-id")
             fail("Expected PageLimitException")
         } catch (e: PageLimitException) { /* pass */ }
     }
 
     @Test
     fun `addPage does not throw at 49 pages`() {
-        makeUseCase().validatePageCount(SaveDocumentUseCase.MAX_PAGES - 1, "doc-id")
+        makeUseCase().validatePageCount(AppConfig.MAX_PAGES - 1, "doc-id")
         // No exception → pass
     }
 
@@ -91,7 +92,7 @@ class SaveDocumentUseCaseTest {
 
     @Test
     fun `validateStorage throws StorageFullException one byte below threshold`() {
-        val oneBelowMin: (File) -> Long = { SaveDocumentUseCase.MIN_STORAGE_BYTES - 1 }
+        val oneBelowMin: (File) -> Long = { AppConfig.MIN_STORAGE_BYTES - 1 }
         try {
             makeUseCase(oneBelowMin).validateStorage()
             fail("Expected StorageFullException")
@@ -100,13 +101,13 @@ class SaveDocumentUseCaseTest {
 
     @Test
     fun `validateStorage does not throw exactly at threshold`() {
-        val atMin: (File) -> Long = { SaveDocumentUseCase.MIN_STORAGE_BYTES }
+        val atMin: (File) -> Long = { AppConfig.MIN_STORAGE_BYTES }
         makeUseCase(atMin).validateStorage()
     }
 
     @Test
     fun `validateStorage does not throw one byte above threshold`() {
-        val oneAboveMin: (File) -> Long = { SaveDocumentUseCase.MIN_STORAGE_BYTES + 1 }
+        val oneAboveMin: (File) -> Long = { AppConfig.MIN_STORAGE_BYTES + 1 }
         makeUseCase(oneAboveMin).validateStorage()
     }
 
@@ -116,7 +117,7 @@ class SaveDocumentUseCaseTest {
     fun `validateBatchPageCount throws when batch would exceed MAX_PAGES`() {
         try {
             makeUseCase().validateBatchPageCount(
-                currentCount = SaveDocumentUseCase.MAX_PAGES - 1,
+                currentCount = AppConfig.MAX_PAGES - 1,
                 batchSize = 2,
                 documentId = "doc"
             )
@@ -127,7 +128,7 @@ class SaveDocumentUseCaseTest {
     @Test
     fun `validateBatchPageCount does not throw when batch fills exactly to MAX_PAGES`() {
         makeUseCase().validateBatchPageCount(
-            currentCount = SaveDocumentUseCase.MAX_PAGES - 5,
+            currentCount = AppConfig.MAX_PAGES - 5,
             batchSize = 5,
             documentId = "doc"
         )
@@ -137,7 +138,7 @@ class SaveDocumentUseCaseTest {
     fun `validateBatchPageCount does not throw when batch stays under MAX_PAGES`() {
         makeUseCase().validateBatchPageCount(
             currentCount = 0,
-            batchSize = SaveDocumentUseCase.MAX_PAGES - 1,
+            batchSize = AppConfig.MAX_PAGES - 1,
             documentId = "doc"
         )
     }
@@ -146,7 +147,7 @@ class SaveDocumentUseCaseTest {
     fun `validateBatchPageCount throws when current count already at MAX_PAGES`() {
         try {
             makeUseCase().validateBatchPageCount(
-                currentCount = SaveDocumentUseCase.MAX_PAGES,
+                currentCount = AppConfig.MAX_PAGES,
                 batchSize = 1,
                 documentId = "doc"
             )

@@ -22,12 +22,6 @@ class SaveDocumentUseCase(
     // Injectable for testing — production default uses StatFs via StorageChecker
     private val availableBytes: (File) -> Long = StorageChecker::availableBytes
 ) {
-    companion object {
-        internal val MIN_STORAGE_BYTES = AppConfig.MIN_STORAGE_BYTES
-        internal val MAX_DOCUMENTS     = AppConfig.MAX_DOCUMENTS
-        internal val MAX_PAGES         = AppConfig.MAX_PAGES
-    }
-
     suspend fun createDocument(bitmap: Bitmap): Document {
         withContext(Dispatchers.IO) { validateStorage() }
         validateDocumentCount(repository.getDocumentCount())
@@ -45,19 +39,19 @@ class SaveDocumentUseCase(
     // Kept non-suspend so pure-logic unit tests can call it directly.
     internal fun validateStorage() {
         val bytes = availableBytes(storageDir)
-        if (bytes < MIN_STORAGE_BYTES) throw StorageFullException(bytes)
+        if (bytes < AppConfig.MIN_STORAGE_BYTES) throw StorageFullException(bytes)
     }
 
     internal fun validateDocumentCount(count: Int) {
-        if (count >= MAX_DOCUMENTS) throw DocumentLimitException()
+        if (count >= AppConfig.MAX_DOCUMENTS) throw DocumentLimitException()
     }
 
     internal fun validatePageCount(count: Int, documentId: String) {
-        if (count >= MAX_PAGES) throw PageLimitException(documentId)
+        if (count >= AppConfig.MAX_PAGES) throw PageLimitException(documentId)
     }
 
     internal fun validateBatchPageCount(currentCount: Int, batchSize: Int, documentId: String) {
-        if (currentCount + batchSize > MAX_PAGES) throw PageLimitException(documentId)
+        if (currentCount + batchSize > AppConfig.MAX_PAGES) throw PageLimitException(documentId)
     }
 
     internal fun buildDocumentName(): String {

@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import com.docscanner.BuildConfig
 import com.docscanner.common.AppConfig
 import com.docscanner.common.AppLanguage
+import com.docscanner.data.local.ReleaseNote
 import com.docscanner.R
 import java.util.Locale
 

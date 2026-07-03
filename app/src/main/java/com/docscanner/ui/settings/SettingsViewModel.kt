@@ -3,6 +3,7 @@ package com.docscanner.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docscanner.R
+import com.docscanner.data.local.ReleaseNote
 import com.docscanner.data.repository.DocumentRepository
 import com.docscanner.ui.common.UiMessage
 import kotlinx.coroutines.Dispatchers

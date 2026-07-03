@@ -1,6 +1,6 @@
 package com.docscanner.data
 
-import com.docscanner.ui.settings.parseReleaseNotes
+import com.docscanner.data.local.parseReleaseNotes
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

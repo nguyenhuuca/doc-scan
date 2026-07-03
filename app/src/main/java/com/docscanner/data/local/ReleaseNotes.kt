@@ -1,4 +1,4 @@
-package com.docscanner.ui.settings
+package com.docscanner.data.local
 
 import android.content.Context
 

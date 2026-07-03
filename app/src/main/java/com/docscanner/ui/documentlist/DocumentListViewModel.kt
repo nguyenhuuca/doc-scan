@@ -45,10 +45,6 @@ class DocumentListViewModel(
     private val exportPdfUseCase: ExportPdfUseCase
 ) : ViewModel() {
 
-    companion object {
-        private val MAX_DOCUMENTS = AppConfig.MAX_DOCUMENTS
-    }
-
     private val _errorMessage = MutableStateFlow<UiMessage?>(null)
     private val _exportedFile = MutableStateFlow<File?>(null)
     private val _filterState = MutableStateFlow(FilterState())
@@ -63,7 +59,7 @@ class DocumentListViewModel(
             documents = filterAndSort(documents, filter.query, filter.sortOrder),
             totalDocumentCount = documents.size,
             isLoading = false,
-            documentLimitReached = documents.size >= MAX_DOCUMENTS,
+            documentLimitReached = documents.size >= AppConfig.MAX_DOCUMENTS,
             searchQuery = filter.query,
             sortOrder = filter.sortOrder,
             errorMessage = error,

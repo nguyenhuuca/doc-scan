@@ -22,7 +22,7 @@ import com.docscanner.ui.scanner.ScannerScreen
 import com.docscanner.ui.scanner.ScannerViewModel
 import com.docscanner.ui.settings.SettingsScreen
 import com.docscanner.ui.settings.SettingsViewModel
-import com.docscanner.ui.settings.loadReleaseNotes
+import com.docscanner.data.local.loadReleaseNotes
 import com.docscanner.ui.viewer.DocumentViewerScreen
 import com.docscanner.ui.viewer.DocumentViewerViewModel
 

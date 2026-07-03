@@ -129,6 +129,24 @@ The while-loop condition must be `||` so BOTH dimensions are fully downsampled:
 while (halfHeight / inSampleSize >= maxHeight || halfWidth / inSampleSize >= maxWidth)
 ```
 
+### 6. UseCase vs Repository in ViewModels
+
+- Operations with **business rules** (limits, validation, storage checks, multi-step
+  writes) go through a **UseCase**: `SaveDocumentUseCase`, `DeleteDocumentUseCase`,
+  `RenameDocumentUseCase`, `ExportPdfUseCase`.
+- **Simple reads** with no rules (`getPagesForDocument`, `pageFileExists`) may call
+  `DocumentRepository` directly from a ViewModel.
+- Never duplicate a rule that a UseCase already enforces; shared validation logic is
+  extracted (e.g. `DocumentNameValidator` serves both the UseCase and the dialog).
+
+### 7. Error surface conventions
+
+- ViewModel errors are `UiMessage(@StringRes, args)` — resolved in the Composable via
+  `resolve(context)`. Never put raw strings or `exception.message` in UiState.
+- Scanner screen: **blocking** problems (storage full, scan failure) → `AlertDialog`;
+  **warnings** the user may continue past (low storage) → dialog with dismiss.
+- All other screens: transient errors → `Snackbar` via `LaunchedEffect(uiState.errorMessage)`.
+
 ---
 
 ## Storage Layout
