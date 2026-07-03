@@ -153,8 +153,9 @@ fun AppNavGraph(
                         val app = this[APPLICATION_KEY] as MyApplication
                         SettingsViewModel(
                             app.container.documentRepository,
-                            app.container.imageStorage
-                        ) { loadReleaseNotes(app) }
+                            storageUsedBytes = { app.container.imageStorage.storageUsedBytes() },
+                            loadNotes = { loadReleaseNotes(app) }
+                        )
                     }
                 }
             )

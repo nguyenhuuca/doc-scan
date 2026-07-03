@@ -112,4 +112,5 @@
     <string name="error_load_page">Không tải được trang.</string>
     <string name="error_processing_failed">Xử lý ảnh thất bại.</string>
     <string name="error_save_changes_failed">Không lưu được thay đổi.</string>
+    <string name="error_load_settings">Không tải được thông tin cài đặt.</string>
 </resources>
