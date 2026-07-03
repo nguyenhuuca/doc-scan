@@ -131,7 +131,7 @@ fun ManualCropScreen(
                     .fillMaxWidth()
                     .onSizeChanged { imageDisplaySize = it }
             ) {
-                androidx.compose.foundation.Image(
+                Image(
                     bitmap = bitmap.asImageBitmap(),
                     contentDescription = stringResource(R.string.captured_image),
                     contentScale = ContentScale.Fit,

@@ -1,5 +1,6 @@
 package com.docscanner.ui.scanner.components
 
+import android.util.Log
 import android.view.ViewGroup
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
@@ -50,7 +51,8 @@ fun CameraPreview(
                 )
                 onPreviewCreated(previewView)
             } catch (e: Exception) {
-                // Camera binding failed — surface will remain blank
+                // Surface stays blank; log so the failure is diagnosable in the field
+                Log.e("CameraPreview", "Camera binding failed", e)
             }
         }, executor)
 

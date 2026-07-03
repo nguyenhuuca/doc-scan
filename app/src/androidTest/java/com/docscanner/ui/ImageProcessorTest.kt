@@ -35,38 +35,38 @@ class ImageProcessorTest {
     }
 
     @Test
-    fun adjustBrightnessAtZeroLeavesPixelsUnchanged() = runBlocking {
+    fun brightnessAtZeroLeavesPixelsUnchanged() = runBlocking {
         val color = Color.rgb(100, 150, 200)
         val src = solidBitmap(color)
-        val result = ImageProcessor.adjustBrightness(src, 0f)
+        val result = ImageProcessor.adjustBrightnessContrast(src, brightness = 0f, contrast = 1f)
         assertEquals(Color.red(color), Color.red(result.getPixel(0, 0)))
         assertEquals(Color.green(color), Color.green(result.getPixel(0, 0)))
         assertEquals(Color.blue(color), Color.blue(result.getPixel(0, 0)))
     }
 
     @Test
-    fun adjustBrightnessAtMaxSaturatesPixelToWhite() = runBlocking {
+    fun brightnessAtMaxSaturatesPixelToWhite() = runBlocking {
         val src = solidBitmap(Color.rgb(100, 100, 100))
-        val result = ImageProcessor.adjustBrightness(src, 255f)
+        val result = ImageProcessor.adjustBrightnessContrast(src, brightness = 255f, contrast = 1f)
         assertEquals(255, Color.red(result.getPixel(0, 0)))
         assertEquals(255, Color.green(result.getPixel(0, 0)))
         assertEquals(255, Color.blue(result.getPixel(0, 0)))
     }
 
     @Test
-    fun adjustContrastAtOneLeavesPixelsUnchanged() = runBlocking {
+    fun contrastAtOneLeavesPixelsUnchanged() = runBlocking {
         val color = Color.rgb(80, 120, 180)
         val src = solidBitmap(color)
-        val result = ImageProcessor.adjustContrast(src, 1f)
+        val result = ImageProcessor.adjustBrightnessContrast(src, brightness = 0f, contrast = 1f)
         assertEqualsWithTolerance(Color.red(color), Color.red(result.getPixel(0, 0)), 2)
         assertEqualsWithTolerance(Color.green(color), Color.green(result.getPixel(0, 0)), 2)
         assertEqualsWithTolerance(Color.blue(color), Color.blue(result.getPixel(0, 0)), 2)
     }
 
     @Test
-    fun adjustContrastAtZeroCollapsesAllPixelsToGrey() = runBlocking {
+    fun contrastAtZeroCollapsesAllPixelsToGrey() = runBlocking {
         val src = solidBitmap(Color.rgb(200, 50, 100))
-        val result = ImageProcessor.adjustContrast(src, 0f)
+        val result = ImageProcessor.adjustBrightnessContrast(src, brightness = 0f, contrast = 0f)
         val r = Color.red(result.getPixel(0, 0))
         val g = Color.green(result.getPixel(0, 0))
         val b = Color.blue(result.getPixel(0, 0))

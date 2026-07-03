@@ -10,6 +10,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
@@ -30,6 +31,10 @@ fun DocumentCard(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Per-composition instance: SimpleDateFormat is not thread-safe, and creating it
+    // on every recomposition is wasteful in a scrolling grid.
+    val dateFormat = remember { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()) }
+
     Card(modifier = modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)) {
         Column {
             AsyncImage(
@@ -53,7 +58,7 @@ fun DocumentCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(document.updatedAt)),
+                    text = dateFormat.format(Date(document.updatedAt)),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

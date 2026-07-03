@@ -17,31 +17,6 @@ object ImageProcessor {
             Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
         }
 
-    suspend fun adjustBrightness(bitmap: Bitmap, brightness: Float): Bitmap =
-        withContext(Dispatchers.Default) {
-            // brightness: -255f to +255f; 0 = no change
-            val colorMatrix = ColorMatrix(floatArrayOf(
-                1f, 0f, 0f, 0f, brightness,
-                0f, 1f, 0f, 0f, brightness,
-                0f, 0f, 1f, 0f, brightness,
-                0f, 0f, 0f, 1f, 0f
-            ))
-            applyColorMatrix(bitmap, colorMatrix)
-        }
-
-    suspend fun adjustContrast(bitmap: Bitmap, contrast: Float): Bitmap =
-        withContext(Dispatchers.Default) {
-            // contrast: 0f to 2f; 1 = no change
-            val translate = (-.5f * contrast + .5f) * 255f
-            val colorMatrix = ColorMatrix(floatArrayOf(
-                contrast, 0f, 0f, 0f, translate,
-                0f, contrast, 0f, 0f, translate,
-                0f, 0f, contrast, 0f, translate,
-                0f, 0f, 0f, 1f, 0f
-            ))
-            applyColorMatrix(bitmap, colorMatrix)
-        }
-
     // Combines brightness and contrast into a single matrix pass so both are always
     // applied fresh from a fixed base bitmap — chaining two separate passes on top of
     // an already-adjusted bitmap would compound the effect on every recompute.
