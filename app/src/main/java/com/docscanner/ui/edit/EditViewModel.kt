@@ -5,10 +5,12 @@ import android.graphics.BitmapFactory
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.docscanner.R
 import com.docscanner.common.AppConfig
 import com.docscanner.common.calcInSampleSize
 import com.docscanner.data.repository.DocumentRepository
 import com.docscanner.domain.model.Page
+import com.docscanner.ui.common.UiMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -29,7 +31,7 @@ data class EditUiState(
     val hasUnsavedChanges: Boolean = false,
     val canUndo: Boolean = false,
     val isSaved: Boolean = false,
-    val errorMessage: String? = null,
+    val errorMessage: UiMessage? = null,
     val brightness: Float = 0f,
     val contrast: Float = 1f
 )
@@ -109,7 +111,7 @@ class EditViewModel(
                 baseBitmap = bitmap
                 _uiState.update { it.copy(currentBitmap = bitmap, isProcessing = false) }
             }.onFailure {
-                _uiState.update { it.copy(isProcessing = false, errorMessage = "Failed to load page.") }
+                _uiState.update { it.copy(isProcessing = false, errorMessage = UiMessage(R.string.error_load_page)) }
             }
         }
     }
@@ -158,7 +160,7 @@ class EditViewModel(
                     }
                     recycleIfOrphaned(old, result, base)
                 }.onFailure {
-                    _uiState.update { it.copy(isProcessing = false, errorMessage = "Processing failed.") }
+                    _uiState.update { it.copy(isProcessing = false, errorMessage = UiMessage(R.string.error_processing_failed)) }
                 }
             }
         }
@@ -222,7 +224,7 @@ class EditViewModel(
                 }
             }.onFailure {
                 _uiState.update { state ->
-                    state.copy(isProcessing = false, errorMessage = "Failed to save changes.")
+                    state.copy(isProcessing = false, errorMessage = UiMessage(R.string.error_save_changes_failed))
                 }
             }
         }
@@ -267,7 +269,7 @@ class EditViewModel(
                     recycleIfOrphaned(current, newBitmap)
                     recycleIfOrphaned(oldBase, newBitmap, current)
                 }.onFailure {
-                    _uiState.update { it.copy(isProcessing = false, errorMessage = "Processing failed.") }
+                    _uiState.update { it.copy(isProcessing = false, errorMessage = UiMessage(R.string.error_processing_failed)) }
                 }
             }
         }

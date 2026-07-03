@@ -5,7 +5,7 @@
     <string name="document_limit_reached">Document limit reached (100). Delete existing documents to create new ones.</string>
     <string name="low_storage_warning_title">Low Storage</string>
     <string name="low_storage_warning_message">Less than 100 MB available. Your scan may fail to save. Free up space and try again.</string>
-    <string name="low_storage_blocked_message">Not enough storage. Free up at least 50 MB to scan.</string>
+    <string name="low_storage_blocked_message">Not enough storage. Free up at least %1$d MB to scan.</string>
     <string name="scan_failed">Scan failed. Please try again.</string>
     <string name="export_failed">Export failed. Please try again.</string>
     <string name="rename_document">Rename document</string>
@@ -19,7 +19,6 @@
     <string name="open_settings">Open Settings</string>
     <string name="camera_permission_rationale">Camera access is required to scan documents.</string>
     <string name="gms_update_required">Google Play Services needs to be updated to use document scanning.</string>
-    <string name="update">Update</string>
     <string name="export_pdf">Export PDF</string>
     <string name="uninstall_warning">Warning: All documents will be deleted when you uninstall this app.</string>
 
@@ -95,4 +94,23 @@
     <!-- Missing page placeholder -->
     <string name="page_file_missing_title">Page file missing</string>
     <string name="page_file_missing_body">This page\'s image file could not be found. It may have been moved or deleted outside the app.</string>
+
+    <!-- ViewModel error messages (resolved via UiMessage) -->
+    <string name="error_page_limit_reached">Page limit (%1$d) reached.</string>
+    <string name="error_document_limit_reached">Document limit (%1$d) reached.</string>
+    <string name="error_storage_full_save">Not enough storage to save.</string>
+    <string name="error_save_failed">Failed to save. Please try again.</string>
+    <string name="error_no_pages_captured">No pages captured.</string>
+    <string name="error_load_document">Failed to load document.</string>
+    <string name="error_delete_document">Failed to delete document.</string>
+    <string name="error_delete_page">Failed to delete page.</string>
+    <string name="error_reorder_pages">Failed to reorder pages.</string>
+    <string name="error_unsupported_image_format">Only JPEG and PNG images are supported.</string>
+    <string name="error_storage_full_import">Not enough storage to import image.</string>
+    <string name="error_import_failed">Failed to import image. Please try again.</string>
+    <string name="error_invalid_document_name">Invalid document name.</string>
+    <string name="error_rename_failed">Failed to rename document.</string>
+    <string name="error_load_page">Failed to load page.</string>
+    <string name="error_processing_failed">Processing failed.</string>
+    <string name="error_save_changes_failed">Failed to save changes.</string>
 </resources>

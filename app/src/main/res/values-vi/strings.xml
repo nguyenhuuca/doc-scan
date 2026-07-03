@@ -5,7 +5,7 @@
     <string name="document_limit_reached">Đã đạt giới hạn tài liệu (100). Xóa tài liệu hiện có để tạo tài liệu mới.</string>
     <string name="low_storage_warning_title">Dung lượng thấp</string>
     <string name="low_storage_warning_message">Còn dưới 100 MB dung lượng trống. Bản quét có thể không lưu được. Hãy giải phóng dung lượng và thử lại.</string>
-    <string name="low_storage_blocked_message">Không đủ dung lượng. Hãy giải phóng ít nhất 50 MB để quét.</string>
+    <string name="low_storage_blocked_message">Không đủ dung lượng. Hãy giải phóng ít nhất %1$d MB để quét.</string>
     <string name="scan_failed">Quét thất bại. Vui lòng thử lại.</string>
     <string name="export_failed">Xuất thất bại. Vui lòng thử lại.</string>
     <string name="rename_document">Đổi tên tài liệu</string>
@@ -19,7 +19,6 @@
     <string name="open_settings">Mở Cài đặt</string>
     <string name="camera_permission_rationale">Cần quyền truy cập camera để quét tài liệu.</string>
     <string name="gms_update_required">Cần cập nhật Google Play Services để sử dụng chức năng quét tài liệu.</string>
-    <string name="update">Cập nhật</string>
     <string name="export_pdf">Xuất PDF</string>
     <string name="uninstall_warning">Cảnh báo: Tất cả tài liệu sẽ bị xóa khi bạn gỡ cài đặt ứng dụng này.</string>
 
@@ -94,4 +93,23 @@
     <!-- Missing page placeholder -->
     <string name="page_file_missing_title">Thiếu file trang</string>
     <string name="page_file_missing_body">Không tìm thấy file ảnh của trang này. File có thể đã bị di chuyển hoặc xóa bên ngoài ứng dụng.</string>
+
+    <!-- ViewModel error messages (resolved via UiMessage) -->
+    <string name="error_page_limit_reached">Đã đạt giới hạn %1$d trang.</string>
+    <string name="error_document_limit_reached">Đã đạt giới hạn %1$d tài liệu.</string>
+    <string name="error_storage_full_save">Không đủ dung lượng để lưu.</string>
+    <string name="error_save_failed">Lưu thất bại. Vui lòng thử lại.</string>
+    <string name="error_no_pages_captured">Chưa chụp được trang nào.</string>
+    <string name="error_load_document">Không tải được tài liệu.</string>
+    <string name="error_delete_document">Không xóa được tài liệu.</string>
+    <string name="error_delete_page">Không xóa được trang.</string>
+    <string name="error_reorder_pages">Không sắp xếp lại được trang.</string>
+    <string name="error_unsupported_image_format">Chỉ hỗ trợ ảnh JPEG và PNG.</string>
+    <string name="error_storage_full_import">Không đủ dung lượng để nhập ảnh.</string>
+    <string name="error_import_failed">Nhập ảnh thất bại. Vui lòng thử lại.</string>
+    <string name="error_invalid_document_name">Tên tài liệu không hợp lệ.</string>
+    <string name="error_rename_failed">Không đổi tên được tài liệu.</string>
+    <string name="error_load_page">Không tải được trang.</string>
+    <string name="error_processing_failed">Xử lý ảnh thất bại.</string>
+    <string name="error_save_changes_failed">Không lưu được thay đổi.</string>
 </resources>

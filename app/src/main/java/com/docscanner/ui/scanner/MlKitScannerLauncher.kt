@@ -5,9 +5,11 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import com.docscanner.R
 import com.docscanner.common.AppConfig
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanner
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
@@ -19,7 +21,7 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 sealed class ScannerResult {
     data class Success(val imageUris: List<Uri>) : ScannerResult()
     object Cancelled : ScannerResult()
-    data class Error(val message: String) : ScannerResult()
+    data class Error(@StringRes val messageRes: Int) : ScannerResult()
     object GmsUpdateRequired : ScannerResult()
 }
 
@@ -37,13 +39,13 @@ fun rememberMlKitScannerLauncher(
                 val scanResult = GmsDocumentScanningResult.fromActivityResultIntent(result.data)
                 val uris = scanResult?.pages?.mapNotNull { it.imageUri } ?: emptyList()
                 if (uris.isEmpty()) {
-                    onResult(ScannerResult.Error("No pages captured."))
+                    onResult(ScannerResult.Error(R.string.error_no_pages_captured))
                 } else {
                     onResult(ScannerResult.Success(uris))
                 }
             }
             Activity.RESULT_CANCELED -> onResult(ScannerResult.Cancelled)
-            else -> onResult(ScannerResult.Error("Scan failed. Please try again."))
+            else -> onResult(ScannerResult.Error(R.string.scan_failed))
         }
     }
 
@@ -69,7 +71,7 @@ fun rememberMlKitScannerLauncher(
                         errorMessage.contains("UserRecoverableException", ignoreCase = true)) {
                         onResult(ScannerResult.GmsUpdateRequired)
                     } else {
-                        onResult(ScannerResult.Error("Scan failed. Please try again."))
+                        onResult(ScannerResult.Error(R.string.scan_failed))
                     }
                 }
         }

@@ -3,9 +3,11 @@ package com.docscanner.ui
 import android.graphics.Bitmap
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.docscanner.R
 import com.docscanner.domain.model.Document
 import com.docscanner.domain.model.Page
 import com.docscanner.domain.usecase.SaveDocumentUseCase
+import com.docscanner.ui.common.UiMessage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -54,14 +56,14 @@ class ScannerFlowTest {
     @Test
     fun onScanErrorStoresMessageInErrorMessage() {
         val vm = makeScannerViewModel()
-        vm.onScanError("something went wrong")
-        assertEquals("something went wrong", vm.uiState.value.errorMessage)
+        vm.onScanError(UiMessage(R.string.scan_failed))
+        assertEquals(UiMessage(R.string.scan_failed), vm.uiState.value.errorMessage)
     }
 
     @Test
     fun clearErrorClearsErrorMessage() {
         val vm = makeScannerViewModel()
-        vm.onScanError("err")
+        vm.onScanError(UiMessage(R.string.scan_failed))
         vm.clearError()
         assertNull(vm.uiState.value.errorMessage)
     }

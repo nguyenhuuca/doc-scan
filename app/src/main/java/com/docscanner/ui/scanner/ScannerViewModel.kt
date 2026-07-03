@@ -12,9 +12,11 @@ import com.docscanner.common.calcInSampleSize
 import com.docscanner.common.exceptions.DocumentLimitException
 import com.docscanner.common.exceptions.PageLimitException
 import com.docscanner.common.exceptions.StorageFullException
+import com.docscanner.R
 import com.docscanner.domain.usecase.SaveDocumentUseCase
 import com.docscanner.ui.common.StorageChecker
 import com.docscanner.ui.common.StorageState
+import com.docscanner.ui.common.UiMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +28,7 @@ import kotlinx.coroutines.withContext
 data class ScannerUiState(
     val savedDocumentId: String? = null,
     val navigateBack: Boolean = false,
-    val errorMessage: String? = null,
+    val errorMessage: UiMessage? = null,
     val isProcessing: Boolean = false,
     val showStorageWarning: Boolean = false,
     val availableStorageBytes: Long = 0L
@@ -46,7 +48,12 @@ class ScannerViewModel(
         viewModelScope.launch {
             when (val state = StorageChecker.check(context.filesDir)) {
                 is StorageState.Blocked -> {
-                    _uiState.update { it.copy(errorMessage = "Not enough storage. Free up at least ${AppConfig.MIN_STORAGE_BYTES / (1024 * 1024)} MB to scan.") }
+                    _uiState.update {
+                        it.copy(errorMessage = UiMessage(
+                            R.string.low_storage_blocked_message,
+                            listOf(AppConfig.MIN_STORAGE_BYTES / (1024 * 1024))
+                        ))
+                    }
                 }
                 is StorageState.Warning -> {
                     _uiState.update { it.copy(showStorageWarning = true, availableStorageBytes = state.availableBytes) }
@@ -92,13 +99,7 @@ class ScannerViewModel(
             }.onSuccess { docId ->
                 _uiState.update { it.copy(isProcessing = false, savedDocumentId = docId) }
             }.onFailure { e ->
-                val message = when (e) {
-                    is PageLimitException -> "Page limit (${AppConfig.MAX_PAGES}) reached."
-                    is DocumentLimitException -> "Document limit (${AppConfig.MAX_DOCUMENTS}) reached."
-                    is StorageFullException -> "Not enough storage to save."
-                    else -> "Failed to save scan. Please try again."
-                }
-                _uiState.update { it.copy(isProcessing = false, errorMessage = message) }
+                _uiState.update { it.copy(isProcessing = false, errorMessage = mapSaveError(e)) }
             }
         }
     }
@@ -116,23 +117,26 @@ class ScannerViewModel(
             }.onSuccess { docId ->
                 _uiState.update { it.copy(isProcessing = false, savedDocumentId = docId) }
             }.onFailure { e ->
-                val message = when (e) {
-                    is PageLimitException -> "Page limit (${AppConfig.MAX_PAGES}) reached."
-                    is StorageFullException -> "Not enough storage to save."
-                    else -> "Failed to save. Please try again."
-                }
-                _uiState.update { it.copy(isProcessing = false, errorMessage = message) }
+                _uiState.update { it.copy(isProcessing = false, errorMessage = mapSaveError(e)) }
             }
         }
+    }
+
+    private fun mapSaveError(e: Throwable): UiMessage = when (e) {
+        is PageLimitException -> UiMessage(R.string.error_page_limit_reached, listOf(AppConfig.MAX_PAGES))
+        is DocumentLimitException -> UiMessage(R.string.error_document_limit_reached, listOf(AppConfig.MAX_DOCUMENTS))
+        is StorageFullException -> UiMessage(R.string.error_storage_full_save)
+        else -> UiMessage(R.string.error_save_failed)
     }
 
     fun onScanCancelled() {
         _uiState.update { it.copy(navigateBack = true) }
     }
 
-    fun onScanError(message: String) {
+    fun onScanError(message: UiMessage) {
         _uiState.update { it.copy(errorMessage = message) }
     }
 
     fun clearError() { _uiState.update { it.copy(errorMessage = null) } }
+    fun clearStorageWarning() { _uiState.update { it.copy(showStorageWarning = false) } }
 }

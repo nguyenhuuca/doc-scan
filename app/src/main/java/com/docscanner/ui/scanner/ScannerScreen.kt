@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import com.docscanner.R
 import com.docscanner.ui.common.CameraPermissionState
 import com.docscanner.ui.common.GmsChecker
+import com.docscanner.ui.common.UiMessage
 import com.docscanner.ui.common.rememberCameraPermissionState
 import com.docscanner.ui.scanner.components.ManualCropScreen
 import com.docscanner.ui.scanner.components.PermissionRationaleScreen
@@ -48,7 +49,7 @@ fun ScannerScreen(
     // Show error dialog instead of silently navigating back
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { msg ->
-            errorDialogMessage = msg
+            errorDialogMessage = msg.resolve(context)
             showErrorDialog = true
             viewModel.clearError()
         }
@@ -69,7 +70,7 @@ fun ScannerScreen(
                     when (result) {
                         is ScannerResult.Success -> viewModel.onScanSuccess(result.imageUris, context)
                         is ScannerResult.Cancelled -> viewModel.onScanCancelled()
-                        is ScannerResult.Error -> viewModel.onScanError(result.message)
+                        is ScannerResult.Error -> viewModel.onScanError(UiMessage(result.messageRes))
                         is ScannerResult.GmsUpdateRequired -> showGmsUpdateDialog = true
                     }
                 }
@@ -115,6 +116,19 @@ fun ScannerScreen(
             text = { Text(errorDialogMessage) },
             confirmButton = {
                 TextButton(onClick = { showErrorDialog = false; onNavigateBack() }) {
+                    Text(stringResource(R.string.ok))
+                }
+            }
+        )
+    }
+
+    if (uiState.showStorageWarning) {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearStorageWarning() },
+            title = { Text(stringResource(R.string.low_storage_warning_title)) },
+            text = { Text(stringResource(R.string.low_storage_warning_message)) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.clearStorageWarning() }) {
                     Text(stringResource(R.string.ok))
                 }
             }

@@ -31,3 +31,4 @@ Thumbs.db
 
 # Test reports
 app/build/
+*.stackdump

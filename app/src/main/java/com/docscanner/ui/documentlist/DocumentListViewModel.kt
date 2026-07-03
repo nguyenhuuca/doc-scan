@@ -7,8 +7,10 @@ import com.docscanner.common.exceptions.DocumentNameException
 import com.docscanner.domain.model.Document
 import com.docscanner.domain.usecase.DeleteDocumentUseCase
 import com.docscanner.domain.usecase.ExportPdfUseCase
+import com.docscanner.R
 import com.docscanner.domain.usecase.GetDocumentsUseCase
 import com.docscanner.domain.usecase.RenameDocumentUseCase
+import com.docscanner.ui.common.UiMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -32,7 +34,7 @@ data class DocumentListUiState(
     val documentLimitReached: Boolean = false,
     val searchQuery: String = "",
     val sortOrder: SortOrder = SortOrder.DATE_DESC,
-    val errorMessage: String? = null,
+    val errorMessage: UiMessage? = null,
     val exportedFile: File? = null
 )
 
@@ -47,7 +49,7 @@ class DocumentListViewModel(
         private val MAX_DOCUMENTS = AppConfig.MAX_DOCUMENTS
     }
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
+    private val _errorMessage = MutableStateFlow<UiMessage?>(null)
     private val _exportedFile = MutableStateFlow<File?>(null)
     private val _filterState = MutableStateFlow(FilterState())
 
@@ -86,7 +88,7 @@ class DocumentListViewModel(
     fun deleteDocument(documentId: String) {
         viewModelScope.launch {
             runCatching { deleteDocumentUseCase(documentId) }
-                .onFailure { _errorMessage.value = "Failed to delete document." }
+                .onFailure { _errorMessage.update { UiMessage(R.string.error_delete_document) } }
         }
     }
 
@@ -94,9 +96,11 @@ class DocumentListViewModel(
         viewModelScope.launch {
             runCatching { renameDocumentUseCase(documentId, newName) }
                 .onFailure { e ->
-                    _errorMessage.value = when (e) {
-                        is DocumentNameException -> e.message ?: "Invalid document name."
-                        else -> "Failed to rename document."
+                    _errorMessage.update {
+                        when (e) {
+                            is DocumentNameException -> UiMessage(R.string.error_invalid_document_name)
+                            else -> UiMessage(R.string.error_rename_failed)
+                        }
                     }
                 }
         }
@@ -105,13 +109,13 @@ class DocumentListViewModel(
     fun exportPdf(documentId: String) {
         viewModelScope.launch {
             runCatching { exportPdfUseCase(documentId) }
-                .onSuccess { _exportedFile.value = it }
-                .onFailure { _errorMessage.value = "Export failed. Please try again." }
+                .onSuccess { file -> _exportedFile.update { file } }
+                .onFailure { _errorMessage.update { UiMessage(R.string.export_failed) } }
         }
     }
 
-    fun clearError() { _errorMessage.value = null }
-    fun clearExportedFile() { _exportedFile.value = null }
+    fun clearError() { _errorMessage.update { null } }
+    fun clearExportedFile() { _exportedFile.update { null } }
 }
 
 internal fun filterAndSort(documents: List<Document>, query: String, sortOrder: SortOrder): List<Document> {

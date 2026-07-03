@@ -11,9 +11,11 @@ import com.docscanner.common.exceptions.StorageFullException
 import com.docscanner.data.repository.DocumentRepository
 import com.docscanner.domain.model.Document
 import com.docscanner.domain.model.Page
+import com.docscanner.R
 import com.docscanner.domain.usecase.DeleteDocumentUseCase
 import com.docscanner.domain.usecase.ExportPdfUseCase
 import com.docscanner.domain.usecase.SaveDocumentUseCase
+import com.docscanner.ui.common.UiMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,7 +36,7 @@ data class DocumentViewerUiState(
     val canAddPage: Boolean = false,
     val exportedFile: File? = null,
     val documentDeleted: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: UiMessage? = null
 )
 
 class DocumentViewerViewModel(
@@ -83,7 +85,7 @@ class DocumentViewerViewModel(
                 }
             }.onFailure {
                 _uiState.update { state ->
-                    state.copy(isLoading = false, errorMessage = "Failed to load document.")
+                    state.copy(isLoading = false, errorMessage = UiMessage(R.string.error_load_document))
                 }
             }
         }
@@ -96,11 +98,11 @@ class DocumentViewerViewModel(
                 if (pages.size <= 1) {
                     runCatching { deleteDocumentUseCase(documentId) }
                         .onSuccess { _uiState.update { it.copy(documentDeleted = true) } }
-                        .onFailure { _uiState.update { it.copy(errorMessage = "Failed to delete document.") } }
+                        .onFailure { _uiState.update { it.copy(errorMessage = UiMessage(R.string.error_delete_document)) } }
                 } else {
                     runCatching { repository.deletePage(documentId, pageId) }
                         .onSuccess { loadDocument() }
-                        .onFailure { _uiState.update { it.copy(errorMessage = "Failed to delete page.") } }
+                        .onFailure { _uiState.update { it.copy(errorMessage = UiMessage(R.string.error_delete_page)) } }
                 }
             }
         }
@@ -110,7 +112,7 @@ class DocumentViewerViewModel(
         viewModelScope.launch {
             runCatching { repository.reorderPages(documentId, reorderedPages) }
                 .onSuccess { loadDocument() }
-                .onFailure { _uiState.update { it.copy(errorMessage = "Failed to reorder pages.") } }
+                .onFailure { _uiState.update { it.copy(errorMessage = UiMessage(R.string.error_reorder_pages)) } }
         }
     }
 
@@ -122,7 +124,7 @@ class DocumentViewerViewModel(
                     _uiState.update { it.copy(isExporting = false, exportedFile = file) }
                 }
                 .onFailure {
-                    _uiState.update { it.copy(isExporting = false, errorMessage = "Export failed. Please try again.") }
+                    _uiState.update { it.copy(isExporting = false, errorMessage = UiMessage(R.string.export_failed)) }
                 }
         }
     }
@@ -145,7 +147,7 @@ class DocumentViewerViewModel(
             .map { (bytes, _) -> bytes }
 
         if (validBytes.isEmpty()) {
-            _uiState.update { it.copy(errorMessage = "Only JPEG and PNG images are supported.") }
+            _uiState.update { it.copy(errorMessage = UiMessage(R.string.error_unsupported_image_format)) }
             return
         }
 
@@ -167,9 +169,9 @@ class DocumentViewerViewModel(
                 loadDocument()
             }.onFailure { e ->
                 val msg = when (e) {
-                    is PageLimitException -> "Page limit ($MAX_PAGES) reached."
-                    is StorageFullException -> "Not enough storage to import image."
-                    else -> "Failed to import image. Please try again."
+                    is PageLimitException -> UiMessage(R.string.error_page_limit_reached, listOf(MAX_PAGES))
+                    is StorageFullException -> UiMessage(R.string.error_storage_full_import)
+                    else -> UiMessage(R.string.error_import_failed)
                 }
                 _uiState.update { it.copy(isLoading = false, errorMessage = msg) }
             }
