@@ -1,70 +1,35 @@
-# Code Quality Standards — Doc Scanner Android
+# Code Quality
 
-## SOLID Principles
+## Gates Before Every Commit
 
-1. **Single Responsibility**: Each ViewModel/Repository/UseCase has one reason to change
-2. **Open/Closed**: Extend behaviour via new UseCases, not by modifying Repository
-3. **Liskov Substitution**: Fake repos in tests must be full substitutes for real `DocumentRepository`
-4. **Interface Segregation**: Keep `DocumentRepository` focused; don't add unrelated queries
-5. **Dependency Inversion**: ViewModel depends on `DocumentRepository` interface, not `DocumentRepositoryImpl`
-
-## DRY
-
-- **Knowledge duplication** (must fix): same limit/quality constant in >1 place → move to `AppConfig`
-- **Incidental duplication** (evaluate): similar Composable structure that may evolve independently
-
-## Android-Specific Performance Rules
-
-### Threading
-- File I/O → `withContext(Dispatchers.IO)`
-- CPU-heavy bitmap ops (compress, decode, transform) → `withContext(Dispatchers.Default)`
-- Nothing blocking on `Dispatchers.Main` (main thread)
-- Composables must never call suspend functions directly — read from `StateFlow`
-
-### Bitmap memory
-- Always use `inJustDecodeBounds = true` first pass to get dimensions without allocating
-- Use `calcInSampleSize` with `||` (not `&&`) for correct two-dimension downsampling
-- Recycle bitmaps explicitly after use in non-Compose contexts
-- Undo stack stores JPEG `ByteArray`, not raw `Bitmap` (5 × ~200 KB vs 5 × ~34 MB)
-
-### Database
-- Never call individual DAO methods in a loop — use bulk `@Update` / `@Insert`
-- Wrap multi-step DB changes in `database.withTransaction { }`
-- N+1 pattern = instant review failure
-
-### Slider / frequent events
-- Debounce with `MutableSharedFlow + debounce(AppConfig.EDIT_SLIDER_DEBOUNCE_MS)`
-- Never call `applyTransform` directly per slider drag event
-
-## Quality Gates
-
-All must pass before committing:
+Run the `gates` of each component you touched in `sdlc.config.json`:
 
 ```bash
-./gradlew testDebugUnitTest --no-daemon   # must be GREEN
+git diff --name-only HEAD | node scripts/sdlc/sdlc-config.mjs gates
 ```
 
-- [ ] No new hardcoded constants (use `AppConfig`)
-- [ ] No blocking I/O on main thread
-- [ ] No N+1 DB query pattern
-- [ ] Room schema change has migration + committed JSON in `app/schemas/`
+Each printed line is a command; all must pass. A gate you cannot run (missing tool, no network) is reported as not run, never as passed. Fix new warnings rather than silencing them.
 
-## Refactoring Discipline
+## Design
 
-**Two Hats Rule**: Never mix refactoring and feature work in the same commit.
+- One reason to change per module. If a description needs "and", consider splitting it.
+- Depend on interfaces at boundaries (storage, network, clock) so tests can swap them.
+- Duplication of a business rule must be removed; duplication of a few similar lines may stay until a third copy appears.
+- Prefer clear names over comments; comment the *why* that the code cannot show.
+- Use the type system: strict mode, no `any`-style escapes, narrow unions over flags.
 
-- **Hat 1 — Refactor**: change structure, NOT behaviour. Tests pass unchanged.
-- **Hat 2 — Feature**: add behaviour. Tests updated or added.
+## Two Hats
 
-Commit after each hat before switching.
+Refactoring changes structure and leaves behavior alone: the existing tests pass untouched. Optimizing changes speed and needs a measurement before and after. Do not mix either with a feature in one commit.
 
-## Naming Conventions
+## Performance Checks for Review
 
-| Element | Convention | Example |
-|---------|-----------|---------|
-| ViewModel state | `*UiState` data class | `EditUiState` |
-| Screen composable | `*Screen` | `DocumentViewerScreen` |
-| Use case | verb + noun + `UseCase` | `SaveDocumentUseCase` |
-| Repository impl | interface name + `Impl` | `DocumentRepositoryImpl` |
-| DB entity | domain name + `Entity` | `PageEntity` |
-| Config constants | `CATEGORY_NAME` | `IMAGE_JPEG_QUALITY` |
+- A query or remote call inside a loop.
+- Blocking I/O on a request or event-loop path.
+- Unbounded result sets with no paging.
+- Quadratic work over input that can grow.
+- The same expensive value computed twice on a hot path.
+
+## Logging
+
+Use the project's structured logger, not print statements. Log errors with enough context to act, include a request or correlation id, and never log secrets, tokens or personal data.

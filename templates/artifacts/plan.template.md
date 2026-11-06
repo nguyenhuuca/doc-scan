@@ -1,172 +1,25 @@
-# Plan: [Task Name]
+# Plan: <Feature or Fix>
 
-<!--
-Implementation Plan
-Filename: artifacts/plan_[task].md
-Owner: Builder (/builder) or Architect (/architect)
-Handoff to: Builder (/builder), QA Engineer (/qa-engineer)
-Related Skills: implementing-code, debugging, testing, test-driven-development
--->
+**Status:** Draft | In progress | Done · **Date:** YYYY-MM-DD · **Inputs:** <PRD, spec, ADR, issue>
 
-## Overview
+## Goal
 
-**Status:** Draft | Approved | In Progress | Complete
-**Author:** [Name]
-**Date:** [YYYY-MM-DD]
-**Beads Issue:** [bd://issue-id or N/A]
-**Related PRD:** [Link to PRD]
-**Related ADR:** [Link to ADR]
+One sentence on the outcome, and how we will know it is done.
 
-## Objective
+## Facts
 
-[Clear, concise statement of what this plan will accomplish]
+What the code does today, each with `path:line`.
 
-## Scope
+## Tasks
 
-### In Scope
-
-- [Item 1]
-- [Item 2]
-
-### Out of Scope
-
-- [Item 1]
-- [Item 2]
-
-## Technical Approach
-
-### Architecture Changes
-
-```
-[Diagram or description of architectural changes]
-```
-
-### Key Decisions
-
-| Decision | Rationale |
-|----------|-----------|
-| [Decision 1] | [Why] |
-| [Decision 2] | [Why] |
-
-## Implementation Steps
-
-### Phase 1: [Setup/Preparation]
-
-- [ ] **Step 1.1:** [Description]
-  - Files: `path/to/file.ts`
-  - Details: [Additional context]
-
-- [ ] **Step 1.2:** [Description]
-  - Files: `path/to/file.ts`
-  - Details: [Additional context]
-
-### Phase 2: [Core Implementation]
-
-- [ ] **Step 2.1:** [Description]
-  - Files: `path/to/file.ts`
-  - Details: [Additional context]
-
-- [ ] **Step 2.2:** [Description]
-  - Files: `path/to/file.ts`
-  - Details: [Additional context]
-
-### Phase 3: [Testing & Cleanup]
-
-- [ ] **Step 3.1:** Write unit tests
-  - Files: `path/to/file.test.ts`
-  - Coverage: [Target %]
-
-- [ ] **Step 3.2:** Integration testing
-  - Scenarios: [List]
-
-- [ ] **Step 3.3:** Documentation
-  - Update: [Files/sections]
-
-## Files to Modify
-
-| File | Action | Description |
-|------|--------|-------------|
-| `path/to/file.ts` | Create | [Purpose] |
-| `path/to/existing.ts` | Modify | [Changes] |
-| `path/to/old.ts` | Delete | [Reason] |
-
-## Dependencies
-
-### Code Dependencies
-
-| Package | Version | Purpose |
-|---------|---------|---------|
-| [package] | [version] | [why needed] |
-
-### Service Dependencies
-
-| Service | Status | Notes |
-|---------|--------|-------|
-| [Service] | [Available/Needed] | [Notes] |
-
-## Testing Strategy
-
-### Unit Tests
-
-| Component | Test Cases | Status |
-|-----------|------------|--------|
-| [Component 1] | [Cases] | Pending |
-| [Component 2] | [Cases] | Pending |
-
-### Integration Tests
-
-| Scenario | Expected Outcome | Status |
-|----------|------------------|--------|
-| [Scenario 1] | [Outcome] | Pending |
-| [Scenario 2] | [Outcome] | Pending |
-
-### Manual Testing
-
-- [ ] [Test case 1]
-- [ ] [Test case 2]
-
-## Rollback Plan
-
-1. [Step to revert if issues arise]
-2. [Step to restore previous state]
-3. [Verification steps]
+| ID | Task | Files | Acceptance criteria | Depends on |
+|----|------|-------|---------------------|------------|
+| T1 | | | | — |
 
 ## Risks
 
-| Risk | Mitigation |
-|------|------------|
-| [Risk 1] | [How to handle] |
-| [Risk 2] | [How to handle] |
+What could go wrong and the check that catches it.
 
-## Checklist
+## Verification
 
-### Before Starting
-
-- [ ] PRD/ADR approved
-- [ ] Dependencies available
-- [ ] Branch created from main
-
-### Before PR
-
-- [ ] All tests passing
-- [ ] No linting errors
-- [ ] Documentation updated
-- [ ] Self-review complete
-
-### Before Merge
-
-- [ ] Code review approved
-- [ ] QA sign-off
-- [ ] No merge conflicts
-
-## Notes
-
-[Any additional context, considerations, or comments]
-
----
-
-## Progress Log
-
-| Date | Update |
-|------|--------|
-| [Date] | [What was done] |
+Tests to add, gates to run, manual checks for the owner.

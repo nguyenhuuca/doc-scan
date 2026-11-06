@@ -1,89 +1,30 @@
 ---
 name: writing-adrs
-description: Document architectural decisions. Use when making significant technical decisions that should be recorded. Covers ADR format and decision documentation.
-allowed-tools: Read, Write, Glob, Grep
+description: When a decision needs an Architecture Decision Record and how to write one — context, real options, the choice and its consequences. Use when a plan or review hits a hard-to-reverse choice.
 ---
 
-# Writing Architecture Decision Records
+# Writing ADRs
 
-## What is an ADR?
+## When One Is Needed
 
-An Architecture Decision Record captures an important architectural decision along with its context and consequences.
+Write an ADR when the decision is expensive to undo or shapes later work, whatever the size of the change:
 
-## When to Write an ADR
+- a data model or schema that other code will depend on;
+- the shape of a public or cross-team API;
+- adding a dependency, service, datastore or vendor;
+- authentication, authorization, encryption or data retention;
+- anything that changes `tech-strategy.md` or a prohibited pattern;
+- a deliberate exception to a rule.
 
-- Choosing a framework or library
-- Selecting a database or storage solution
-- Defining API patterns
-- Establishing coding conventions
-- Making infrastructure decisions
-- Any decision that affects multiple components
+Not needed: a choice local to one module that a later refactor can change cheaply.
 
-## ADR Structure
+## How
 
-### Title
-Short phrase describing the decision.
+1. Next number: highest `docs/adr/NNNN-*.md` plus one. File `docs/adr/NNNN-<topic>.md` from `templates/artifacts/adr.template.md`.
+2. **Context**: the forces, in facts with `path:line` and links to earlier ADRs. Someone who was not there should understand why this came up.
+3. **Options**: two or more that were really considered. For each: how it would work here, cost, risk, and reversibility. Leave out straw men.
+4. **Decision**: the choice and the deciding reason, and what is being given up.
+5. **Consequences**: what changes in code, operations, security and tests; follow-up tasks.
+6. Status `Proposed` until the owner accepts. Accepted ADRs are not rewritten: a later change gets a changelog line, a larger one a new ADR that supersedes it.
 
-### Status
-- **Proposed**: Under discussion
-- **Accepted**: Decision made
-- **Rejected**: Considered but not adopted
-- **Deprecated**: No longer valid
-- **Superseded**: Replaced by another ADR
-
-### Context
-What is the situation? What forces are at play?
-
-### Decision
-What is the change we're making?
-
-### Rationale
-Why is this the best choice?
-
-### Consequences
-What are the trade-offs? Both positive and negative.
-
-## Example ADR
-
-```markdown
-# ADR: Use PostgreSQL for Primary Database
-
-## Status
-Accepted
-
-## Context
-We need a database for our new service. Requirements:
-- ACID transactions
-- JSON support
-- Strong ecosystem
-- Team familiarity
-
-## Decision
-We will use PostgreSQL 15+ as our primary database.
-
-## Rationale
-- Mature, reliable RDBMS
-- Excellent JSON support with JSONB
-- Strong extension ecosystem (pgvector, PostGIS)
-- Team has deep PostgreSQL experience
-- Well-supported by all cloud providers
-
-## Consequences
-### Positive
-- Reliable, battle-tested technology
-- Rich feature set
-- Easy to find developers
-
-### Negative
-- Vertical scaling has limits
-- Requires careful connection management
-- More operational overhead than managed NoSQL
-```
-
-## Best Practices
-
-1. **Keep them short**: 1-2 pages max
-2. **Write when deciding**: Not after the fact
-3. **Include alternatives**: Show what was considered
-4. **Update status**: Mark deprecated/superseded ADRs
-5. **Number sequentially**: `ADR-001`, `ADR-002`, etc.
+Hard architectural trade-offs can go to `worker-architect`.

@@ -234,3 +234,25 @@ For code changes:
 - ❌ `fallbackToDestructiveMigration()` in database builder
 - ❌ `SimpleDateFormat` in a shared singleton (not thread-safe) — use instance per call
 - ❌ Backtick method names with spaces in `androidTest/` (DEX 040 limit)
+
+<!-- agentic-sdlc:begin (managed by agentic-sdlc; edit outside this block, or remove the markers to take it over) -->
+## Working Agreement
+
+This repository uses [agentic-sdlc](https://github.com/nguyenhuuca/agentic-sdlc) 0.2.0.
+
+- **Rules** in `.claude/rules/` load in every session: `core-directives.md` (principles, planning flow, where artifacts go), `security.md` (wins over everything), `code-quality.md`, `debugging-protocol.md`, `agent-constraints.md`, `tech-strategy.md`, `session-file.md`.
+- **Project commands** (gates, QA runner, smoke) live in `sdlc.config.json`. `git diff --name-only HEAD | node scripts/sdlc/sdlc-config.mjs gates` prints the gates for what you changed.
+- **Pushing** always waits for the owner's yes, one push at a time.
+- **Tracking**: tasks in `TASKS.md`, feature status in `docs/tracking.md`, the task in flight in `session.txt`.
+
+| Command | Use |
+|---------|-----|
+| `/scope` | idea → PRD |
+| `/spec` | PRD → spec + sequence diagrams |
+| `/swarm-plan`, `/swarm-execute` | plan, then build it with workers |
+| `/swarm-review`, `/code-check` | deep review, quick check |
+| `/autopilot` | one small feature or fix end to end, with two approval gates |
+| `/land-the-plane` | gates → commit → push (with approval) → CI |
+| `/task-resume` | continue the task in `session.txt` |
+| `/evolve` | improve the agent's rules from its own escaped defects |
+<!-- agentic-sdlc:end -->

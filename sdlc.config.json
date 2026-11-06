@@ -1,0 +1,11 @@
+{
+  "deployBranch": "master",
+  "maxLoc": 400,
+  "components": [],
+  "smoke": null,
+  "buildWorkflow": null,
+  "tracking": {
+    "tasks": "TASKS.md",
+    "status": "docs/tracking.md"
+  }
+}

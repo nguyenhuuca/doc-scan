@@ -32,3 +32,9 @@ Thumbs.db
 # Test reports
 app/build/
 *.stackdump
+
+# agentic-sdlc
+scratchpad/
+evolve-out/
+*.sdlc-new
+.qa-junit.xml

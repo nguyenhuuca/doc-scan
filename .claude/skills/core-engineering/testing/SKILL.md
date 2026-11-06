@@ -1,112 +1,35 @@
 ---
 name: testing
-description: Write effective tests for code quality and reliability. Use when implementing features, fixing bugs, or improving coverage. Covers unit, integration, and E2E testing.
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, mcp__chrome-devtools__*
+description: How to write tests in this repository — test-first for logic, a failing regression test for every bug fix, deterministic tests, and the right level for each check. Use whenever adding or changing tests.
 ---
 
-# Testing Software
+# Testing
 
-## MCP Tools
+## Order of Work
 
-**Chrome DevTools** (E2E testing):
-- Automate user flows in real browser
-- Capture screenshots for visual regression
-- Run Lighthouse for accessibility testing
-- Profile performance during test runs
+1. Write the test for the behavior you are about to add, and watch it fail for the expected reason.
+2. Write the smallest code that makes it pass.
+3. Clean up with the test green.
 
-## Testing Pyramid
+For a bug: reproduce it in a test first. The test must fail on the current code; then fix. If you cannot make it fail, you have not found the cause yet (`debugging-protocol.md`).
 
-1. **Unit Tests** (Many): Fast, isolated, test single units
-2. **Integration Tests** (Some): Test component interactions
-3. **E2E Tests** (Few): Test complete user flows — use Chrome DevTools
+## What a Good Test Looks Like
 
-## Workflows
+- One behavior per test, named after it: `rejects_expired_token`, not `test2`.
+- Arrange, act, assert, in that order and visibly separated.
+- Asserts on outcomes the user or caller sees, not on private details or call counts, unless the call is the behavior (sending an email, charging a card).
+- Independent: no order between tests, no shared mutable state, each cleans up what it creates.
+- Deterministic: inject the clock, random source and ids; no real network; no sleeps, wait on a condition instead.
+- Fast: unit tests in milliseconds. Slow tests are tagged and run in their own job.
 
-- [ ] **Analyze**: Use Glob and Grep to identify untested code
-- [ ] **Unit Tests**: Cover all public functions
-- [ ] **Edge Cases**: Test boundaries and error conditions
-- [ ] **Integration**: Test external dependencies
-- [ ] **E2E**: Use Chrome DevTools for browser automation
-- [ ] **Regression**: Add test for each bug fix
+## Doubles
 
-## Test Quality Standards
+Replace what is slow, flaky or external (network, payment, time). Keep real what is cheap and part of the behavior (pure functions, in-memory structures, the database in an integration test when the project runs one in a container). A test that mocks the thing it is testing proves nothing.
 
-### Deterministic
-Tests must produce the same result every time.
+## Coverage
 
-### Isolated
-Tests should not depend on each other or shared state.
+Use coverage to find untested branches, not as the goal. Never lower a threshold to pass a gate; add the missing tests or explain the exception to the owner.
 
-### Clear
-Test names should describe the behavior being tested.
+## Flaky Tests
 
-## Test Patterns
-
-### Arrange-Act-Assert (AAA) (Java + JUnit 5)
-
-```java
-@ExtendWith(MockitoExtension.class)
-class UserServiceTest {
-    @Mock
-    private EmailService emailService;
-
-    @InjectMocks
-    private UserService userService;
-
-    @Test
-    void registerUser_ValidEmail_SendsWelcomeEmail() {
-        // Arrange
-        String email = "test@example.com";
-        ArgumentCaptor<Email> emailCaptor = ArgumentCaptor.forClass(Email.class);
-
-        // Act
-        userService.register(email);
-
-        // Assert
-        verify(emailService).send(emailCaptor.capture());
-        Email sentEmail = emailCaptor.getValue();
-        assertThat(sentEmail.getTo()).isEqualTo("test@example.com");
-        assertThat(sentEmail.getSubject()).isEqualTo("Welcome!");
-    }
-}
-```
-
-## E2E Testing with Chrome DevTools
-
-```javascript
-// Use Chrome DevTools MCP for browser automation
-// - Navigate to pages
-// - Fill forms and click buttons
-// - Capture screenshots for visual regression
-// - Run Lighthouse accessibility audits
-// - Check console for errors
-```
-
-## Commands (Java/Maven)
-
-```bash
-# Run unit tests
-mvn test
-
-# Run tests with coverage
-mvn verify
-
-# Run specific test class
-mvn test -Dtest=UserServiceTest
-
-# Run specific test method
-mvn test -Dtest=UserServiceTest#registerUser_ValidEmail_SendsWelcomeEmail
-
-# Generate coverage report
-mvn jacoco:report
-
-# View coverage report
-open target/site/jacoco/index.html
-```
-
-## Finding Untested Code
-
-Use Glob and Grep to identify gaps:
-1. Use Glob to find all source files and test files
-2. Check which source files have corresponding test files
-3. Use Grep to see if functions are referenced in tests
+A test that fails one run in many is a bug. Run suspects twice with `node scripts/sdlc/qa-twice.mjs`, find the cause (time, order, shared state, async without waiting), and fix it. Do not retry until green, skip it silently or delete it.
