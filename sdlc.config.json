@@ -1,7 +1,15 @@
 {
   "deployBranch": "master",
   "maxLoc": 400,
-  "components": [],
+  "components": [
+    {
+      "name": "android-app",
+      "path": ".",
+      "gates": [
+        "./gradlew testDebugUnitTest --no-daemon"
+      ]
+    }
+  ],
   "smoke": null,
   "buildWorkflow": null,
   "tracking": {
